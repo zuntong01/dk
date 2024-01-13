@@ -45,6 +45,7 @@ foreach($targetVM in $vms)
     $count++
 }
 
+## 명령어 수행결과, csv파일에 저장
 $date = Get-Date -Format yyyyMMddss
 $reports | Export-Csv -Path "F:\Result\파일Path_to_inst_$date.csv" -NoTypeInformation -Encoding UTF8
 $reports | Out-GridView
