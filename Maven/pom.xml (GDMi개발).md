@@ -3,7 +3,8 @@
 #### <b><span style="color:cyan">[스크립트 설명]</span></b>  
 ```bash
 maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 위한 설정파일)
-프로젝트가 어떤 의존성을 사용할 건지, 프로젝트를 통해 어떤동작(컴파일, 프로젝트실행, 배포등)을 설정하는 곳
+
+
 ```
 
 #### <b><span style="color:cyan">[pom.xml (GDMi개발) 스크립트]</span></b>
@@ -66,7 +67,6 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
 <!--
     <repository> maven 저장소 의존성파일을 검색위치 정의 (해당저장소에서 > .m2디렉토리로 가져옴 / 저장소에 접근할수 없다면, m2디렉토리를 검색함)
     <pluginRepository> Maven 플러그인을 검색하는 곳을 정의
-
 -->
     
 <repositories>
@@ -87,14 +87,210 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
   </pluginRepository>
 </pluginRepositories>
 
+<!--
+  <profiles 섹션> 빌드프로세스에서 조건부 설정을 지원하는 기능 제공 
+    mvn clean install -P dev 명령을 수행했을때, profile id값이 dev 프로파일의 변수를 사용하게 됨(여기서는, env변수에 dev값이 들어감)
+    해당 변수을 활용해서 개발, 운영환경에 따라 동일변수에 다른값을 사용하여 빌드프로세스에 활용
+-->
+
+<profiles>
+  <profile>
+    <id>dev</id>
+    <properties>
+      <env>dev</env>
+    </properties>
+  </profile>
+  <profile>
+    <id>prod</id>
+    <properties>
+      <env>prod</env>
+    </properties>
+  </profile>
+</profiles>
+
+<!--
+
+-->
+  <build 섹션> 빌드프로세스에 설정들에 대해 명시
+    <defaultGoal> : mvn 명령어 실행시 명시적인 목표지정하지 않았을때, 사용되는 기본 목표
+                예) package : build + packaging(예:war)
+    <directory> : 빌드산출물이 저장되는 디렉토리 위치 (프로젝트 루트디렉토리/target)
+    <finalName> : 빌드산출물의 이름 (properties섹션에서 명시한 artifactID를 따라감)
+    <plugins> : Maven plugin
+      <plugin> maven-compiler-plugin 을 통해 빌드하고, 1.7 호환, UTF-8인코딩으로 빌드처리함
+      <plugin> mvn test명령어로 maven-surefire-plugin 이 프로젝트의 src/test/java 의 코드를 실행함
+               추가적으로 <include>를 사용하여 테스트 코드 범위를 늘리기 위해 사용함
+               단, devonframe/**/*Test.java 형식은 devonframe 패키지의 루트디렉토리 하위에 모든 디렉토리에서 *Test.java 코드를 실행하는 의미로 보임.
+              (컴파일되지 않았음으로 maven을 컴파일하고 테스트코드를 실행함)
+      <plugin> maven-war-plugins 을 통해, 빌트 아티팩트를 war로 만듬
+               1. src/main/webapp 디렉토리의 모든 파일을 WAR파일 최상단으로 위치 시킴
+               2. src/main/java 디렉토리를 컴파일하여 WAR파일의 WEB-INF/classes/프로젝트 하위에 위치시킴
+               3. src/main/resources 디렉토리를 모두 복사하여 WAR파일의 WEB-INF/classes 하위에 위치시킴
+               4. src/main/wbapp 디렉토리의 /export, /import, /fileupload 는 WAR파일에 포함안시키는걸로 예상되지만, WAR파일에 실제 포함되어 있어서, 안먹은듯...
+               5. <profile 섹션>에서 정의한 env 변수를 사영하여 src/main/profiles/${env}에 위치한 파일들을 WEB-INF/lcasses에 위치 시킴
+
+<build>
+  <defaultGoal>package</defaultGoal>
+  <directory>${basedir}/target</directory>
+  <finalName>${proejct.artifactId}</finalName>
+  <plugins>
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-compiler-plugin</artifactId>
+      <configuration>
+        <source>1.7</source>
+        <target>1.7</target>
+        <encoding>UTF-8</encoding>
+      </configuration>
+    </plugin>
+
+    <plugin>
+      <groupId>org.apache.maven.plugins</groupId>
+      <artifactId>maven-surefire-plugin</artifactId>
+      <configuration>
+        <skip>false</skip>
+        <includes>
+          <include>devonframe/**/*Test.java</include>
+        </includes>
+        <testFailureIgnore>false</testFailureIgnore>
+        <argLine>-Xms256m -Xms512m -XX:MaxPermSize=128m -ea
+                 -Dfile.enconding=UTF-8</argLine>
+      </configuration>
+    </plugin>
+
+    <plugin>
+      <artifactId>maven-war-plugin</artifactId>
+      <version>2.4</version>
+      <configuration>
+        <warSourceExcludes>/export,/import,/fileupload</warSourceExcludes>
+        <packagingExcludes>/export,/import,/fileupload</packagingExcludes>
+        <webResources>
+          <resource>
+            <directory>src/main/profiles/${env}</directory>
+            <targetPath>WEB-INF/classes</targetPath>
+          </resource>
+        </webResources>
+      </configuration>
+    </plugin>
+  </plugins>
+</build>
 
 
+<!--
+  <dependencies 섹션> dependency의 각항목들은 프로젝트가 의존하고 있는 라이브러리들을 명시하고, 
+                     빌드프로세스에서 어떻게사용되는지 / 다운로드되는지 / 빌드결과물에 포함되는지 등을 결정
+-->
+<dependencies>
 
+  <!-- 예시) devnframe 그룹의 devon-web아티팩트를 ${devonframe.version} 버젼으로 가져옴
+         기본값으로 compile 단계에서, 컴파일러 클래스패스에 추가(소스컴파일에 사용됨), 
+         WEB-INF/lib 하위에 저장되어, 빌드결과물에 포함됨 (runtime에 사용됨). -->
+  <dependency>
+    <groupId>devonframe</groupId>
+    <artifactId>devon-web<artifactId>
+    <version>${devonframe.version}</version>
+  <dependency>
 
+  <!-- 예시) devnframe 그룹의 devon-transaction아티팩트를 ${devonframe.version} 버젼으로 가져옴
+          <exclusion> 단, devon-transaction 이 의존하는 mybatis는 다운로드 하지 않음
+                    maven은 의존성트리라고하여, 해당라이브러리가 의존성하는 다른라이브러리를 함께 다운로드 됨
+                    라이브러리가 의존하는 파일이 없다면, Maven 빌드는 실패
+          <scope> compile : 컴파일단계에서 컴파일러 클래스패스에 추가(소스컴파일에 사용됨),
+                            WEB-INF/lib 하위에 저장되어, 빌드결과물에 포함됨 (runtime에 사용됨). -->
+  <dependency>
+    <groupId>devonframe</groupId>
+    <artifactId>devon-transaction<artifactId>
+    <version>${devonframe.version}</version>
+    <exclusions>
+      <exclusion>
+        <groupId>org.mybatis</groupId>
+        <artifactId>mybatis</artifactId>
+      </exclusion>
+    </exclusions>
+    <scope>compile</scope>
+  </dependency>
 
+  <!-- 예시) javax.servlet 그룹의 javax.servlet-api아티팩트를 ${servlet.api.version} 버젼으로 가져옴 
+          <scope> provided : 컴파일단계에서 컴파일러 클래스패스에 추가되고, 빌드결과물에는 포함안됨 X --> 
+  <dependency>
+    <groupId>javax.servlet</groupId>
+    <artifactId>javax.servlet-api<artifactId>
+    <version>${servlet.api.version}</version>
+    <scope>provided</scope>
+  </dependency>
 
+  <!-- 예시) org.springframework 그룹의 spring-test아티팩트를 ${org.springframework.version} 버젼으로 가져옴 
+          <scope> test : 테스트단계에서, 컴파일러 클래스패스에 추가되어 테스트소스 컴파일 / 
+                         컴파일된 테스트코드를 실행할때도, 클래스패스에 포함되어 사용됨, 빌드결과물에는 포함안됨 X --> 
+  <dependency>
+    <groupId>org.springframework</groupId>
+    <artifactId>spring-test<artifactId>
+    <version>${org.springframework.version}</version>
+    <scope>test</scope>
+  </dependency>
 
+  <dependency>
+    <groupId>junit</groupId>
+    <artifactId>junit<artifactId>
+    <version>${junit.version}}</version>
+    <scope>test</scope>
+  </dependency>
 
+  <!-- 예시) activation 그룹의 activation 아티팩트를 1 버젼으로 가져옴 
+          <scope> system : 로컬디렉토리(sysemPath) 에 있는 파일을 빌드과정에서 클래스패스로 추가,
+                           빌드결과물에는 포함되지 않지만, 실제 systemPath위치가 WEB-INF/lib 이기 때문에, 결론은 포함됨. -->
+  <dependency>
+    <groupId>activation</groupId>
+    <artifactId>activation<artifactId>
+    <version>1</version>
+    <scope>system</scope>
+    <systemPath>${webcontent-dir}/WEB-INF/lib/activation.jar</systemPath>
+  </dependency>
 
+</dependencies>
+</proejct>
 
+<!-- ※ 실제 사용된 depedency 라이브러리 항목들
+  <groupID> devonframe <artifactID> devon-web, devon-dataaccess, devon-transaction, devon-fileupload, devon-paging, devon-mail, devon-crypto
+  <groupID> org.mybatis / <artifactID> mybatis
+  <groupID> org.springframework / <artifactID> spring-context, spring-jdbc, spring-webmvc, spring-test
+  <groupID> org.aspectj / <artifactID> aspectjweaver
+  <groupID> com.googlecode.json-simple / <artifactID> json-simple
+  <groupID> javax.servlet / <artifactID> javax.servlet-api, jstl
+  <groupID> javax.annotation / <artifactID> jsr250-api
+  <groupID> taglibs / <artifactID> standard
+  <groupID> commons-dbcp / <artifactID> commons-dbcp
+  <groupID> com.tobesoft / <artifactID> nexacro-xapi
+  <groupID> nexacro-xeni / <artifactID> nexacro-xeni
+  <groupID> sevlets.com / <artifactID> cos
+  <groupID> org.codehaus.jackson / <artifactID> jackson-mapper-asl
+  <groupID> junit / <artifactID> junit
+  <groupID> org.quarts-scheduler / <artifactID> quartz
+  <groupID> activation / <artifactID> activation
+  <groupID> axis-ant / <artifactID> axis-ant
+  <groupID> axis / <artifactID> axis
+  <groupID> commons-httpclient / <artifactID> commons-httpclient
+  <groupID> commons-discovery / <artifactID> commons-discovery
+  <groupID> jaxrpc / <artifactID> jaxrpc
+  <groupID> mail / <artifactID> mail
+  <groupID> saaj / <artifactID> saaj
+  <groupID> wsdl4j / <artifactID> wsdl4j
+  <groupID> wsh / <artifactID> wsh
+  <groupID> xalan / <artifactID> xalan
+  <groupID> xerceslmpl / <artifactID> xerceslmpl
+  <groupID> xmlParserAPIs / <artifactID> xmlParserAPIs
+  <groupID> scpdb / <artifactID> scpdb
+  <groupID> org.bouncycastle / <artifactID> bcprov-jdk15on
+  <groupID> org.mindrot / <artifactID> jbcrypt
+  <groupID> org.apache.poi / <artifactID> poi, poi-ooxml, poi-oxml-schemas, poi-excelant, poi-scratchpad
+  <groupID> sax / <artifactID> sax
+  <groupID> javax.xml.stream / <artifactID> stax-api
+  <groupID> stax / <artifactID> stax-api
+  <groupID> apache-xerces / <artifactID> xml-apis
+  <groupID> xml-apis / <artifactID> xml-apis
+  <groupID> org.apache.xmlbeans / <artifactID> xmlbeans
+  <groupID> commons-codec / <artifactID> commons-codec
+  <groupID> dom4j / <artifactID> dom4j
+  <groupID> ant-contrib / <artifactID> ant-contrib
+-->
 ```
