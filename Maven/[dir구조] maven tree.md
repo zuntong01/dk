@@ -97,3 +97,49 @@ gdmi.war
 
 
 ```
+
+
+
+gdmi/
+├── pom.xml  ("maven 빌드설정파일") 
+│
+├── src/main/java/   
+│   │   │
+│   │   ├── profiles/ 
+│   │   │   ├── dev/config/project.properties
+│   │   │   │   └── spring/context-datasource.xml
+│   │   │   ├── dev/config/project.properties
+│   │   │   │   └── spring/context-datasource.xml
+│   │   │   └── prod//config/project.properties
+│   │   │       └── spring/context-datasource.xml
+│   │   │
+│   │   ├── resources/config/
+│   │   │         ├── fileupload/
+│   │   │         ├── mail/
+│   │   │         ├── message/
+│   │   │         ├── spring/
+│   │   │         │   └── context-datasource.xml
+│   │   │         └── sql/
+│   │   │
+│   │   ├── webapp/
+│   │   │   ├── common/
+│   │   │   ├── export/
+│   │   │   ├── import/
+│   │   │   ├── fileupload/
+│   │   │   ├── license/
+│   │   │   ├── jsp/
+│   │   │   ├── monitoring/
+│   │   │   ├── nxui/
+│   │   │   ├── resource/
+│   │   │   ├── sso/
+│   │   │   └── WEB-INF/
+│   │   │   │       ├── jsp/
+│   │   │   │       ├── lib/
+│   │   │   │       ├── prelib/
+│   │   │   │       └── tags/
+│   │   │   └── index.html
+│   │   │
+│   ├── test/
+│   │   ├── java/
+│   │   └── resources/
+└── target/
