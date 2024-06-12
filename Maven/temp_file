@@ -1,1 +1,57 @@
+################ jenkins pipeline ( BD-TAMS-DEV )
+pipeline {
+    agent any
+    environment {
+        name = 'GAAI.war'
+    }
+    tools {
+        maven 'LGE_MAVEN'
+        jdk 'LGE_JAVA'
+        ant 'LGE_ANT'
+    }
+    
+    stages {
+        
+         stage('Ready') {
+             steps {
+             echo 'kill process!'
+             }
+         }
+        
+        stage ('Checkout') {
+            steps {
+                echo 'Checkout'
+                sh "rm -rf GAAI"
+                //sh "if [ ! -d SEAL ] ; then /sorc001/appadm/ciserv/bin/svn co svn://10.185.246.189/svn/trunk/SEAL; fi"
+                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/trunk/GAAI"
+                //sh "/sorc001/appadm/ciserv/bin/svn update ./SEAL"
+            }
+        }
+        
+        /*stage('pre') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile test/build_dev.xml pre"
+            }
+        }*/
+        
+        stage('Build') {
+            steps {
+                echo 'Now Build'
+               sh "mvn -f GAAI/pom_dev.xml clean package"
+            }
+        }
+            
+        /*stage('Deploy') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile GAAI/build_dev.xml build_all"
+            }
+        }*/
+    }
+}
+
+################ jenkins pipeline ( BD-TAMS-SA-DEV )
+
+
 
