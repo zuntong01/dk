@@ -1,3 +1,5 @@
+## jenkins 파이프라인 문법 참고 : https://lovethefeel.tistory.com/95
+
 ################ jenkins pipeline ( BD-TAMS-DEV )
 pipeline {
     agent any
