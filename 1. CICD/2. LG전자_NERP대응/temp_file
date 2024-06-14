@@ -1,0 +1,1557 @@
+## jenkins 파이프라인 문법 참고 : https://velog.io/@namkun/Jenkins-Declarative-Pipeline
+
+################ jenkins pipeline ( BD-TAMS-DEV )
+
+//jenkins 파이프라인 코드 작성 방식 : 1. 스크립트 파이프라인 / 2. 선언형 파이프라인 작성 방식
+//선언형 파이프라인 작성 방식으로 기술되어 있음 (비교적쉽게 작성 가능)
+
+
+<!-- pipeline : 선언형 파이프라인의 시작은 pipeline으로 시작해야함 
+	agent any :  jenkins에서 파이프라인을 실행할 agent 노드를 어디로 할지 지정 (single 구성시 built-in node 1개 존재)
+        environment { name = 'GAAI.war' } : 파이프라인 전역 환경변수 지정
+	tools : 파이프라인에 빌드할 도구에 대해 설정 (Jenkins관리/Tools에 지정한 이름 또는 PATH를 지정함
+                ※ 지원하는 Tools : maven, jdk, gradle, git 등
+-->
+
+pipeline {
+    agent any
+    environment {
+        name = 'GAAI.war'
+    }
+    tools {
+        maven 'LGE_MAVEN'
+        jdk 'LGE_JAVA'
+        ant 'LGE_ANT'
+    }
+
+<!-- stages : 파이프라인의 중심 로직을 정의하는 각각의 stage를 묶는 섹션
+	stage('Ready') : Ready 라는 파이프라인 stage를 정의 (jenkins는 stage를 인터페이스에 표시함)
+		steps { } : 원하는 작업을 기술함
+                  
+    stages {
+        
+         stage('Ready') {
+             steps {
+             echo 'kill process!'
+             }
+         }
+
+<!--	stage('Checkout') : 빌드를 위한 사전소스 체크아웃 (사전정의된 스크립트언어가 있으나 --> 여기서는, svn co 명령을 직접 실행함) 
+                            ※ snippet generator에서 생성가능 : 예) steps { checkout([$class: 'SubversionSCM', locations: [[credentialsId: '크리덴셜ID', depthOption: 'infinity', local: '.', remote: 'svn://10.185.246.78/NTAMS/trunk/GAAI']]]) }
+-->                     
+        stage ('Checkout') {
+            steps {
+                echo 'Checkout'
+                sh "rm -rf GAAI"
+                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/trunk/GAAI"
+            }
+        }
+
+<!--	stage('Build') : maven 빌드 수행 단계 정의 / 상단에 정의한 Tools에 위치한 maven 을 통해 빌드 수행 
+                         (※ steps { withMaven(maven: 'maven3.8.1') {sh "mvn clean package"} } 플러그인을 통한 maven을 빌드하는 사전정의 스크립트도 있는것 같음)
+-->
+        stage('Build') {
+            steps {
+                echo 'Now Build'
+               sh "mvn -f GAAI/pom_dev.xml clean package"
+            }
+        }           
+    }
+}
+
+################ jenkins pipeline ( BD-TAMS-SA-DEV )
+pipeline {
+    agent any
+    environment {
+        name = 'GAAI-SA.war'
+    }
+    tools {
+        maven 'LGE_MAVEN'
+        jdk 'LGE_JAVA'
+        ant 'LGE_ANT'
+    }
+    
+    stages {
+        
+         stage('Ready') {
+             steps {
+             echo 'kill process!'
+             }
+         }
+        
+        stage ('Checkout') {
+            steps {
+                echo 'Checkout'
+                sh "rm -rf GAAI_ServiceAccess"
+                //sh "if [ ! -d SEAL ] ; then /sorc001/appadm/ciserv/bin/svn co svn://10.185.246.189/svn/trunk/SEAL; fi"
+                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/trunk/GAAI_ServiceAccess"
+                //sh "/sorc001/appadm/ciserv/bin/svn update ./SEAL"
+            }
+        }
+        
+        /*stage('pre') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile test/build_dev.xml pre"
+            }
+        }*/
+        
+        /*stage('Build') {
+            steps {
+                echo 'Now Build'
+               sh "mvn -f GAAI/pom_dev.xml clean package"
+            }
+        }*/
+            
+        stage('Deploy') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile GAAI_ServiceAccess/build_prod.xml all"
+            }
+        }
+    }
+}
+
+################ jenkins pipeline ( BD-TAMS-PROD )
+
+pipeline {
+    agent any
+    environment {
+        name = 'GAAI-SA.war'
+    }
+    tools {
+        maven 'LGE_MAVEN'
+        jdk 'LGE_JAVA'
+        ant 'LGE_ANT'
+    }
+    
+    stages {
+        
+         stage('Ready') {
+             steps {
+             echo 'kill process!'
+             }
+         }
+        
+        stage ('Checkout') {
+            steps {
+                echo 'Checkout'
+                sh "rm -rf GAAI_ServiceAccess"
+                //sh "if [ ! -d SEAL ] ; then /sorc001/appadm/ciserv/bin/svn co svn://10.185.246.189/svn/trunk/SEAL; fi"
+                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/trunk/GAAI_ServiceAccess"
+                //sh "/sorc001/appadm/ciserv/bin/svn update ./SEAL"
+            }
+        }
+        
+        /*stage('pre') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile test/build_dev.xml pre"
+            }
+        }*/
+        
+        /*stage('Build') {
+            steps {
+                echo 'Now Build'
+               sh "mvn -f GAAI/pom_dev.xml clean package"
+            }
+        }*/
+            
+        stage('Deploy') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile GAAI_ServiceAccess/build_prod.xml all"
+            }
+        }
+    }
+}
+
+################ jenkins pipeline ( BD-TAMS-SA-PROD )
+
+pipeline {
+    agent any
+    environment {
+        name = 'GAAI-SA.war'
+    }
+    tools {
+        maven 'LGE_MAVEN'
+        jdk 'LGE_JAVA'
+        ant 'LGE_ANT'
+    }
+    
+    stages {
+        
+         stage('Ready') {
+             steps {
+             echo 'kill process!'
+             }
+         }
+        
+        stage ('Checkout') {
+            steps {
+                echo 'Checkout'
+                sh "rm -rf GAAI_ServiceAccess"
+                //sh "if [ ! -d SEAL ] ; then /sorc001/appadm/ciserv/bin/svn co svn://10.185.246.189/svn/trunk/SEAL; fi"
+                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/trunk/GAAI_ServiceAccess"
+                //sh "/sorc001/appadm/ciserv/bin/svn update ./SEAL"
+            }
+        }
+        
+        /*stage('pre') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile test/build_dev.xml pre"
+            }
+        }*/
+        
+        /*stage('Build') {
+            steps {
+                echo 'Now Build'
+               sh "mvn -f GAAI/pom_dev.xml clean package"
+            }
+        }*/
+            
+        stage('Deploy') {
+            steps {
+                echo 'Deploy'
+                sh "ant -buildfile GAAI_ServiceAccess/build_prod.xml all"
+            }
+        }
+    }
+}
+
+################ jenkins job ( BD-TEST-JOB-SONAR )
+
+sonar.projectKey=BD-TEST-JOB
+sonar.sources=/sorc001/appadm/ciserv/jenkins/workspace/BD-TEST-JOB/test/src
+sonar.java.binaries=/sorc001/appadm/ciserv/jenkins/workspace/BD-TEST-JOB/test/target
+sonar.host.url=http://localhost:9000
+sonar.login=sqp_a5ee1eb8a413cb2c87164c528d92cd23c8a6ebab
+
+
+***************** build (pom_dev.xml)
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.lge</groupId>
+    <artifactId>GAAI</artifactId>
+    <version>1.0.0</version>
+    <packaging>war</packaging>
+    <name>GAAI</name>
+    <url>http://maven.apache.org</url>
+    <description>GAAI</description>
+
+	<properties>
+		<web.remotedir>/sorc001/appadm/applications/htdocs</web.remotedir>
+		<was.remotedir>/sorc001/appadm/applications/bizactor</was.remotedir>
+		<was.remotedir.stage>/sorc001/appadm/stage/${project.build.finalName}</was.remotedir.stage>
+		<was.dir.resource>/sorc001/appadm/ciserv/jenkins/workspace/BD-TAMS-DEV/GAAI/src/main/resources</was.dir.resource>
+		<was.dir.web>/sorc001/appadm/ciserv/jenkins/workspace/BD-TAMS-DEV/GAAI/src/main/webapp/WEB-INF</was.dir.web>
+		<was.dir.webapp>/sorc001/appadm/ciserv/jenkins/workspace/BD-TAMS-DEV/GAAI/src/main/webapp</was.dir.webapp>
+		<bizactor.lib>/sorc001/appadm/applications/bizactor/lib</bizactor.lib>
+		<dev.argo.dir>/engn001/lena/1.3.3.0/servers/GAAI_8180</dev.argo.dir>
+
+		<!-- Generic properties -->
+		<java.version>1.8</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<maven.test.skip>false</maven.test.skip>
+		<maven.javadoc.skip>true</maven.javadoc.skip>
+		<!-- Spring -->
+		<org.springframework.version>3.2.10.RELEASE</org.springframework.version>
+		<devonframe.version>1.0.3</devonframe.version>
+
+		<!-- Logging -->
+		<log4j.version>1.2.17</log4j.version>
+		<slf4j.version>1.6.1</slf4j.version>
+
+		<!-- commons -->
+		<commons.io.version>2.2</commons.io.version>
+		<commons.fileupload.version>1.3.1</commons.fileupload.version>
+		<commons.dbcp.version>1.3</commons.dbcp.version>
+
+		<!-- Web -->
+		<jsp.api.version>2.1</jsp.api.version>
+		<jstl.version>1.2</jstl.version>
+		<servlet.api.version>2.5</servlet.api.version>
+		<taglibs.version>1.1.2</taglibs.version>
+
+		<jsr250.api.version>1.0</jsr250.api.version>
+		<hsqldb.version>1.8.0.10</hsqldb.version>
+
+		<!-- Test -->
+		<junit.version>4.11</junit.version>
+
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>devon-repository</id>
+			<name>repository for DevOn</name>
+			<layout>default</layout>
+			<url>http://www.dev-on.com/devon_framework/nexus/content/groups/public</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>devon-repository</id>
+			<name>repository for DevOn</name>
+			<layout>default</layout>
+			<url>http://www.dev-on.com/devon_framework/nexus/repository</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<dependencies>
+
+	    <!-- devonframe -->
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-web</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-dataaccess</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-paging</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-excel</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-fileupload</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-validator</artifactId>
+			<version>${devonframe.version}</version>
+			<exclusions>
+		        <exclusion>
+		            <groupId>commons-collections</groupId>
+		            <artifactId>commons-collections</artifactId>
+		        </exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-crypto</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-xplatform</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${org.springframework.version}</version>
+		    <exclusions>
+		        <exclusion>
+		            <groupId>commons-logging</groupId>
+		            <artifactId>commons-logging</artifactId>
+		        </exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-context-support</artifactId>
+		  <version>${org.springframework.version}</version>
+		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.springframework</groupId> -->
+<!-- 			<artifactId>spring-jdbc</artifactId> -->
+<!-- 			<version>${org.springframework.version}</version> -->
+<!-- 		</dependency> -->
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.springframework</groupId> -->
+<!-- 			<artifactId>spring-webmvc</artifactId> -->
+<!-- 			<version>${org.springframework.version}</version> -->
+<!-- 		</dependency> -->
+
+		<!-- Logging -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>${log4j.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjweaver</artifactId>
+			<version>1.7.4</version>
+		</dependency>
+
+        <!-- javax -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>${servlet.api.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+			<version>${jstl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>jsr250-api</artifactId>
+			<version>${jsr250.api.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>taglibs</groupId>
+			<artifactId>standard</artifactId>
+			<version>${taglibs.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+        <!-- Commons -->
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>${commons.dbcp.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
+			<version>4.1</version>
+		</dependency>
+
+		<!-- JDBC Client
+		<dependency>
+			<groupId>com.oracle</groupId>
+			<artifactId>ojdbc</artifactId>
+			<version>14</version>
+		</dependency> -->
+
+		<!-- HSQL DB -->
+		<dependency>
+			<groupId>hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>${hsqldb.version}</version>
+		</dependency>
+
+		<!-- REST -->
+		<dependency>
+		    <groupId>com.fasterxml.jackson.core</groupId>
+		    <artifactId>jackson-databind</artifactId>
+		    <version>2.3.3</version>
+		</dependency>
+
+		<!-- Apache CXF -->
+		<dependency>
+		    <groupId>org.apache.cxf</groupId>
+		    <artifactId>cxf-rt-frontend-jaxws</artifactId>
+		    <version>2.6.16</version>
+		    <exclusions>
+		    	<exclusion>
+		    		<groupId>org.apache.geronimo.specs</groupId>
+		    		<artifactId>geronimo-javamail_1.4_spec</artifactId>
+		    	</exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.cxf</groupId>
+		    <artifactId>cxf-rt-transports-http</artifactId>
+		    <version>2.6.16</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.cxf</groupId>
+		    <artifactId>cxf-rt-management</artifactId>
+		    <version>2.6.16</version>
+		</dependency>
+
+		<!-- Test -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${org.springframework.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-mapper-asl</artifactId>
+			<version>1.9.13</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+			<version>4.2.0.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache</artifactId>
+			<version>2.8.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20131018</version>
+		</dependency>
+
+		<!-- BizActor -->
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>bizactor.server</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/bizactor.server.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>bizactor.dataset</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/bizactor.dataset.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>bizactor.exception</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/bizactor.exception.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>server.agent</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/server.agent.jar</systemPath>
+		</dependency>
+
+		<!-- Miplatform -->
+		<dependency>
+			<groupId>miplatform</groupId>
+			<artifactId>miplatform</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${was.dir.web}/lib/miplatform-3.2.jar</systemPath>
+		</dependency>
+
+		<!-- Nexacro -->
+		<dependency>
+			<groupId>nexacro-xapi</groupId>
+			<artifactId>nexacro-xapi</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${was.dir.web}/lib/nexacro-xapi-1.0.jar</systemPath>
+		</dependency>
+
+		<dependency>
+	    <groupId>org.lazyluke</groupId>
+	    <artifactId>log4jdbc-remix</artifactId>
+	    <version>0.2.7</version>
+	    <exclusions>
+	    	<exclusion>
+	    		<artifactId>junit</artifactId>
+	    		<groupId>junit</groupId>
+	    	</exclusion>
+	    	<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+	    	</exclusion>
+	    </exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.quartz-scheduler</groupId>
+			<artifactId>quartz</artifactId>
+			<version>1.8.6</version>
+		</dependency>
+
+		<!-- ireports -->
+		<dependency>
+		    <groupId>net.sf.jasperreports</groupId>
+		    <artifactId>jasperreports</artifactId>
+		    <version>5.6.0</version>
+		    <exclusions>
+				<exclusion>
+					<artifactId>xml-apis</artifactId>
+					<groupId>xml-apis</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+		    <groupId>org.codehaus.groovy</groupId>
+		    <artifactId>groovy-all</artifactId>
+		    <version>2.0.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>net.sf.jasperreports</groupId>
+		    <artifactId>jasperreports-fonts</artifactId>
+		    <version>4.0.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>ArialUnicodeMS</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${was.dir.web}/lib/ArialUnicodeMS.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>CODE2000</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${was.dir.web}/lib/Code2000.jar</systemPath>
+		</dependency>
+
+		<!-- Qr Code  -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>3.2.0</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>com.google.zxing</groupId>
+		    <artifactId>core</artifactId>
+		    <version>3.2.0</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<defaultGoal>clean package</defaultGoal>
+		<finalName>${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.5.1</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<encoding>${project.build.sourceEncoding}</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+		        <groupId>org.apache.maven.plugins</groupId>
+		        <artifactId>maven-surefire-plugin</artifactId>
+		        <version>2.12</version>
+		        <configuration>
+<!-- 		        	<skipTests>true</skipTests> -->
+			        <forkMode>always</forkMode>
+			        <parallel>classes</parallel>
+<!-- 					<argLine>-Xms256m -Xmx512m -XX:MaxPermSize=128m -Dfile.encoding=UTF-8</argLine> -->
+		        </configuration>
+		    </plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>2.2</version>
+<!-- 				<configuration> -->
+<!-- 					<packagingExcludes>${was.exclude.lib}</packagingExcludes> -->
+<!-- 				</configuration> -->
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<id>war_deploy</id>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<tasks>
+								<sync todir='${was.remotedir.stage}' includeemptydirs='true'>
+							    	<fileset dir="${basedir}/target/${project.build.finalName}" />
+								</sync>
+								<move file="${was.remotedir.stage}/WEB-INF/classes/log4j_dev.xml" tofile="${was.remotedir.stage}/WEB-INF/classes/log4j.xml" overwrite="true"/>
+								<move file="${was.remotedir.stage}/WEB-INF/web.xml_dev" tofile="${was.remotedir.stage}/WEB-INF/web.xml" overwrite="true"/>
+								<move file="${was.remotedir.stage}/WEB-INF/classes/spring/mvc-context-fileupload.xml_dev" tofile="${was.remotedir.stage}/WEB-INF/classes/spring/mvc-context-fileupload.xml" overwrite="true"/>
+								<move file="${was.remotedir.stage}/WEB-INF/classes/spring/context-datasource.xml_dev"     tofile="${was.remotedir.stage}/WEB-INF/classes/spring/context-datasource.xml"     overwrite="true"/>
+
+								<move file="${was.remotedir.stage}/WEB-INF/classes/config/project_dev.properties" tofile="${was.remotedir.stage}/WEB-INF/classes/config/project.properties" overwrite="true"/>
+								<move file="${was.remotedir.stage}/index_dev.html" tofile="${was.remotedir.stage}/index.html" overwrite="true"/>
+
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/bizactor.dataset.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/bizactor.exception.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/server.agent.developer.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/httpclient-4.5.2.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/httpcore-4.4.4.jar"/>
+
+
+								<!-- JASPER 관련 수정 -->
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/jasperreports-5.6.0.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/commons-digester-2.1.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/commons-collections-3.2.1.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/ArialUnicodeMS.jar"/>
+								<delete file="${was.remotedir.stage}/WEB-INF/lib/Code2000.jar"/>
+
+
+								<!-- 2016-09-21 김대영K
+								     - 기존 WAS의 autodeploy=true 옵션을 autodeploy=false로 변경하며,
+								     - ${project.build.finalName}.war 파일을 생성하던 것을 ${project.build.finalName}디렉토리에 바로 Sync 하는 방식으로 변경함.
+							    <exec executable="/bin/sh">
+  									<arg value="-c" />
+								  	<arg value="cd ${was.remotedir.stage}; jar -cvf ${was.remotedir}/${project.build.finalName}.war * " />
+								</exec>
+								-->
+								<sync todir='${was.remotedir}/${project.build.finalName}' includeemptydirs='true'>
+							    	<fileset dir="${was.remotedir.stage}" />
+								</sync>
+								<sync todir='${web.remotedir}/' >
+							    	<fileset dir="${was.remotedir.stage}" >
+							    		<exclude name="**/WEB-INF/**"/>
+							    		<exclude name="**/*.jsp"/>
+							    	</fileset>
+								</sync>
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>ant</groupId>
+						<artifactId>ant-commons-net</artifactId>
+						<version>1.6.5</version>
+					</dependency>
+					<dependency>
+						<groupId>commons-net</groupId>
+						<artifactId>commons-net</artifactId>
+						<version>1.4.1</version>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.ant</groupId>
+						<artifactId>ant-jsch</artifactId>
+						<version>1.8.4</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+
+            <plugin>
+        	    <groupId>org.apache.maven.plugins</groupId>
+        		<artifactId>maven-deploy-plugin</artifactId>
+        		<version>2.7</version>
+      		</plugin>
+		</plugins>
+	</build>
+</project>
+
+
+***************** build (pom_prod.xml)
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>com.lge</groupId>
+    <artifactId>tams</artifactId>
+    <version>1.0.0</version>
+    <packaging>war</packaging>
+    <name>TAMS</name>
+    <url>https://tams.lge.com</url>
+    <description>TAMS</description>
+	<profiles>
+		<profile>
+			<id>prod</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<properties>
+				<!-- 개발서버내에서 Jenkins의 빌드 완료된 디렉토리 (FTP전송을 위한 소스디렉토리) -->
+				<was.stage>/sorc001/appadm/stage/BD-TAMS-PROD</was.stage>
+
+				<!-- 개발서버에 BizActor 디렉토리 (컴파일 Dependency)-->
+				<bizactor.lib>/sorc001/appadm/applications/bizactor/lib</bizactor.lib>
+
+				<was.lib.dir>/sorc001/appadm/ciserv/jenkins/workspace/BD-TAMS-PROD/GAAI/src/main/webapp/WEB-INF/lib</was.lib.dir>
+
+
+				<!-- 운영서버 SCP 전송 관련 Properties -->
+				<!-- 외부망 웹서버 #1 -->
+				<prod.LGEHTAMS01V.scp.host>165.186.128.39</prod.LGEHTAMS01V.scp.host>
+				<prod.LGEHTAMS01V.scp.password>!dlatl00</prod.LGEHTAMS01V.scp.password>
+				<prod.LGEHTAMS01V.scp.user>midadm</prod.LGEHTAMS01V.scp.user>
+				<prod.LGEHTAMS01V.scp.web.dir>/sorc001/tamsadm/applications/htdocs</prod.LGEHTAMS01V.scp.web.dir>
+				<!-- 외부망 웹서버 #2 -->
+				<prod.LGEHTAMS02V.scp.host>165.186.128.40</prod.LGEHTAMS02V.scp.host>
+				<prod.LGEHTAMS02V.scp.password>!dlatl00</prod.LGEHTAMS02V.scp.password>
+				<prod.LGEHTAMS02V.scp.user>midadm</prod.LGEHTAMS02V.scp.user>
+				<prod.LGEHTAMS02V.scp.web.dir>/sorc001/tamsadm/applications/htdocs</prod.LGEHTAMS02V.scp.web.dir>
+				<!-- 내부망 웹서버 #1 -->
+				<prod.LGEWTAMS01V.scp.host>10.185.222.147</prod.LGEWTAMS01V.scp.host>
+				<prod.LGEWTAMS01V.scp.password>!dlatl00</prod.LGEWTAMS01V.scp.password>
+				<prod.LGEWTAMS01V.scp.user>midadm</prod.LGEWTAMS01V.scp.user>
+				<prod.LGEWTAMS01V.scp.was.dir>/sorc001/tamsadm/applications/bizactor/TAMS</prod.LGEWTAMS01V.scp.was.dir>
+				<prod.LGEWTAMS01V.scp.web.dir>/sorc001/tamsadm/applications/htdocs</prod.LGEWTAMS01V.scp.web.dir>
+				<!-- 내부망 웹서버 #2 -->
+				<prod.LGEWTAMS02V.scp.host>10.185.222.148</prod.LGEWTAMS02V.scp.host>
+				<prod.LGEWTAMS02V.scp.password>!dlatl00</prod.LGEWTAMS02V.scp.password>
+				<prod.LGEWTAMS02V.scp.user>midadm</prod.LGEWTAMS02V.scp.user>
+				<prod.LGEWTAMS02V.scp.was.dir>/sorc001/tamsadm/applications/bizactor/TAMS</prod.LGEWTAMS02V.scp.was.dir>
+				<prod.LGEWTAMS02V.scp.web.dir>/sorc001/tamsadm/applications/htdocs</prod.LGEWTAMS02V.scp.web.dir>
+
+				<prod.scp.port>22222</prod.scp.port>
+
+
+			</properties>
+		</profile>
+	</profiles>
+
+	<properties>
+
+		<!-- Generic properties -->
+		<java.version>1.8</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<maven.test.skip>true</maven.test.skip>
+		<maven.javadoc.skip>true</maven.javadoc.skip>
+
+		<!-- Spring -->
+		<org.springframework.version>3.2.10.RELEASE</org.springframework.version>
+		<devonframe.version>1.0.3</devonframe.version>
+
+		<!-- Logging -->
+		<log4j.version>1.2.17</log4j.version>
+		<slf4j.version>1.6.1</slf4j.version>
+
+		<!-- commons -->
+		<commons.io.version>2.2</commons.io.version>
+		<commons.fileupload.version>1.3.1</commons.fileupload.version>
+		<commons.dbcp.version>1.3</commons.dbcp.version>
+
+		<!-- Web -->
+		<jsp.api.version>2.1</jsp.api.version>
+		<jstl.version>1.2</jstl.version>
+		<servlet.api.version>2.5</servlet.api.version>
+		<taglibs.version>1.1.2</taglibs.version>
+
+		<jsr250.api.version>1.0</jsr250.api.version>
+		<hsqldb.version>1.8.0.10</hsqldb.version>
+
+		<!-- Test -->
+		<junit.version>4.11</junit.version>
+
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>devon-repository</id>
+			<name>repository for DevOn</name>
+			<layout>default</layout>
+			<url>http://www.dev-on.com/devon_framework/nexus/content/groups/public</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</repository>
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>devon-repository</id>
+			<name>repository for DevOn</name>
+			<layout>default</layout>
+			<url>http://www.dev-on.com/devon_framework/nexus/repository</url>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<dependencies>
+
+
+	    <!-- devonframe -->
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-web</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-dataaccess</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-paging</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-excel</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-fileupload</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-validator</artifactId>
+			<version>${devonframe.version}</version>
+			<exclusions>
+		        <exclusion>
+		            <groupId>commons-collections</groupId>
+		            <artifactId>commons-collections</artifactId>
+		        </exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-crypto</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-xplatform</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${org.springframework.version}</version>
+		    <exclusions>
+		        <exclusion>
+		            <groupId>commons-logging</groupId>
+		            <artifactId>commons-logging</artifactId>
+		        </exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+		  <groupId>org.springframework</groupId>
+		  <artifactId>spring-context-support</artifactId>
+		  <version>${org.springframework.version}</version>
+		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.springframework</groupId> -->
+<!-- 			<artifactId>spring-jdbc</artifactId> -->
+<!-- 			<version>${org.springframework.version}</version> -->
+<!-- 		</dependency> -->
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.springframework</groupId> -->
+<!-- 			<artifactId>spring-webmvc</artifactId> -->
+<!-- 			<version>${org.springframework.version}</version> -->
+<!-- 		</dependency> -->
+
+		<!-- Logging -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-api</artifactId>
+			<version>${slf4j.version}</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-log4j12</artifactId>
+			<version>${slf4j.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>log4j</groupId>
+			<artifactId>log4j</artifactId>
+			<version>${log4j.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjweaver</artifactId>
+			<version>1.7.4</version>
+		</dependency>
+
+        <!-- javax -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>servlet-api</artifactId>
+			<version>${servlet.api.version}</version>
+			<scope>provided</scope>
+		</dependency>
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+			<version>${jstl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>jsr250-api</artifactId>
+			<version>${jsr250.api.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>taglibs</groupId>
+			<artifactId>standard</artifactId>
+			<version>${taglibs.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+        <!-- Commons -->
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>${commons.dbcp.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-collections4</artifactId>
+			<version>4.1</version>
+		</dependency>
+
+		<!-- JDBC Client
+		<dependency>
+			<groupId>com.oracle</groupId>
+			<artifactId>ojdbc</artifactId>
+			<version>14</version>
+		</dependency> -->
+
+		<!-- HSQL DB -->
+		<dependency>
+			<groupId>hsqldb</groupId>
+			<artifactId>hsqldb</artifactId>
+			<version>${hsqldb.version}</version>
+		</dependency>
+
+		<!-- REST -->
+		<dependency>
+		    <groupId>com.fasterxml.jackson.core</groupId>
+		    <artifactId>jackson-databind</artifactId>
+		    <version>2.3.3</version>
+		</dependency>
+
+		<!-- Apache CXF -->
+		<dependency>
+		    <groupId>org.apache.cxf</groupId>
+		    <artifactId>cxf-rt-frontend-jaxws</artifactId>
+		    <version>2.6.16</version>
+		    <exclusions>
+		    	<exclusion>
+		    		<groupId>org.apache.geronimo.specs</groupId>
+		    		<artifactId>geronimo-javamail_1.4_spec</artifactId>
+		    	</exclusion>
+		    </exclusions>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.cxf</groupId>
+		    <artifactId>cxf-rt-transports-http</artifactId>
+		    <version>2.6.16</version>
+		</dependency>
+		<dependency>
+		    <groupId>org.apache.cxf</groupId>
+		    <artifactId>cxf-rt-management</artifactId>
+		    <version>2.6.16</version>
+		</dependency>
+
+		<!-- Test -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${org.springframework.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-mapper-asl</artifactId>
+			<version>1.9.13</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.3.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-validator</artifactId>
+			<version>4.2.0.Final</version>
+		</dependency>
+		<dependency>
+			<groupId>net.sf.ehcache</groupId>
+			<artifactId>ehcache</artifactId>
+			<version>2.8.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.json</groupId>
+			<artifactId>json</artifactId>
+			<version>20131018</version>
+		</dependency>
+
+		<!-- BizActor -->
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>bizactor.server</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/bizactor.server.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>bizactor.dataset</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/bizactor.dataset.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>bizactor.exception</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/bizactor.exception.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>bizactor</groupId>
+			<artifactId>server.agent</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${bizactor.lib}/server.agent.jar</systemPath>
+		</dependency>
+
+		<!-- Miplatform -->
+		<dependency>
+			<groupId>miplatform</groupId>
+			<artifactId>miplatform</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${was.lib.dir}/miplatform-3.2.jar</systemPath>
+		</dependency>
+
+		<!-- Nexacro -->
+		<dependency>
+			<groupId>nexacro-xapi</groupId>
+			<artifactId>nexacro-xapi</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${was.lib.dir}/nexacro-xapi-1.0.jar</systemPath>
+		</dependency>
+
+		<dependency>
+	    <groupId>org.lazyluke</groupId>
+	    <artifactId>log4jdbc-remix</artifactId>
+	    <version>0.2.7</version>
+	    <exclusions>
+	    	<exclusion>
+	    		<artifactId>junit</artifactId>
+	    		<groupId>junit</groupId>
+	    	</exclusion>
+	    	<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-api</artifactId>
+	    	</exclusion>
+	    </exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.quartz-scheduler</groupId>
+			<artifactId>quartz</artifactId>
+			<version>1.8.6</version>
+		</dependency>
+
+		<!-- ireports -->
+		<dependency>
+		    <groupId>net.sf.jasperreports</groupId>
+		    <artifactId>jasperreports</artifactId>
+		    <version>5.6.0</version>
+		    <exclusions>
+				<exclusion>
+					<artifactId>xml-apis</artifactId>
+					<groupId>xml-apis</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+		    <groupId>org.codehaus.groovy</groupId>
+		    <artifactId>groovy-all</artifactId>
+		    <version>2.0.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>net.sf.jasperreports</groupId>
+		    <artifactId>jasperreports-fonts</artifactId>
+		    <version>4.0.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.sf.jasperreports</groupId>
+			<artifactId>ArialUnicodeMS</artifactId>
+			<version>1.0</version>
+			<scope>system</scope>
+			<systemPath>${was.lib.dir}/ArialUnicodeMS.jar</systemPath>
+		</dependency>
+
+		<!-- Qr Code  -->
+		<dependency>
+			<groupId>com.google.zxing</groupId>
+			<artifactId>javase</artifactId>
+			<version>3.2.0</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>com.google.zxing</groupId>
+		    <artifactId>core</artifactId>
+		    <version>3.2.0</version>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<defaultGoal>clean package</defaultGoal>
+		<finalName>${project.artifactId}</finalName>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>2.5.1</version>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<encoding>${project.build.sourceEncoding}</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-resources-plugin</artifactId>
+				<version>2.6</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.12.4</version>
+		        <configuration>
+<!-- 		        	<skipTests>true</skipTests> -->
+			        <forkMode>always</forkMode>
+			        <parallel>classes</parallel>
+<!-- 					<argLine>-Xms256m -Xmx512m -XX:MaxPermSize=128m -Dfile.encoding=UTF-8</argLine> -->
+		        </configuration>
+			</plugin>
+<!-- 			<plugin> -->
+<!-- 				<groupId>com.google.code.maven-replacer-plugin</groupId> -->
+<!-- 				<artifactId>replacer</artifactId> -->
+<!-- 				<version>1.5.2</version> -->
+<!-- 				<executions> -->
+<!-- 	               <execution> -->
+<!-- 	                   <phase>prepare-package</phase> -->
+<!-- 	                   <goals> -->
+<!-- 	                       <goal>replace</goal> -->
+<!-- 	                   </goals> -->
+<!-- 	               </execution> -->
+<!-- 				</executions> -->
+<!-- 	            <configuration> -->
+<!-- 	                <ignoreMissingFile>true</ignoreMissingFile> -->
+<!-- 	                <file>src/main/resources/config/db.properties</file> -->
+<!-- 					<replacements> -->
+<!-- 					    <replacement> -->
+<!-- 					        <token>27.122.227.230</token> -->
+<!-- 					        <value>${inner-ip}</value> -->
+<!-- 					    </replacement> -->
+<!-- 					</replacements> -->
+<!-- 	            </configuration> -->
+<!-- 			</plugin> -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-war-plugin</artifactId>
+				<version>2.2</version>
+<!-- 				<configuration> -->
+<!-- 					<packagingExcludes>${was.exclude.lib}</packagingExcludes> -->
+<!-- 				</configuration> -->
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-antrun-plugin</artifactId>
+				<version>1.7</version>
+				<executions>
+					<execution>
+						<id>war_deploy</id>
+						<phase>package</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<tasks>
+
+								<!-- PROD Server Ant Step
+										1. file sync to stage dir from target dir
+										2. Change configuration for PROD server (jar and config files)
+										3. Sync to PROD WAS
+										4. Sync to PROD WEB Server
+										5. restart WAS manually -->
+
+
+								<!-- 1. file sync to stage dir from target dir -->
+								<sync todir='${was.stage}' includeemptydirs='true'>
+							    	<fileset dir="${basedir}/target/${project.build.finalName}" />
+								</sync>
+
+
+								<!-- 2. Change configuration for PROD server (jar and config files) -->
+								<move file="${was.stage}/WEB-INF/classes/log4j_prod.xml"                         tofile="${was.stage}/WEB-INF/classes/log4j.xml"                         overwrite="true"/>
+								<move file="${was.stage}/WEB-INF/web.xml_prod"                                   tofile="${was.stage}/WEB-INF/web.xml"                                   overwrite="true"/>
+								<move file="${was.stage}/WEB-INF/classes/spring/mvc-context-fileupload.xml_prod" tofile="${was.stage}/WEB-INF/classes/spring/mvc-context-fileupload.xml" overwrite="true"/>
+								<move file="${was.stage}/WEB-INF/classes/spring/context-datasource.xml_prod"     tofile="${was.stage}/WEB-INF/classes/spring/context-datasource.xml"     overwrite="true"/>
+
+								<move file="${was.stage}/WEB-INF/classes/config/ncd_prod.properties"             tofile="${was.stage}/WEB-INF/classes/config/ncd.properties"             overwrite="true"/>
+								<move file="${was.stage}/WEB-INF/classes/config/project_prod.properties"         tofile="${was.stage}/WEB-INF/classes/config/project.properties"         overwrite="true"/>
+								<move file="${was.stage}/index_prod.html"                                        tofile="${was.stage}/index.html"                                        overwrite="true"/>
+
+								<delete file="${was.stage}/WEB-INF/lib/bizactor.dataset.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/bizactor.exception.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/server.agent.developer.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/httpclient-4.5.2.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/httpcore-4.4.4.jar"/>
+
+								<!-- JASPER 관련 수정 -->
+								<delete file="${was.stage}/WEB-INF/lib/jasperreports-5.6.0.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/commons-digester-2.1.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/commons-collections-3.2.1.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/ArialUnicodeMS.jar"/>
+								<delete file="${was.stage}/WEB-INF/lib/Code2000.jar"/>
+
+
+
+								<!-- 3. SCP to PROD WAS -->
+								<!-- 3.1 SCP to PROD WAS#1 -->
+								<!-- <scp todir="${prod.LGEWTAMS01V.scp.user}:${prod.LGEWTAMS01V.scp.password}@${prod.LGEWTAMS01V.scp.host}:/${prod.LGEWTAMS01V.scp.was.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<include name="WEB-INF/**" />
+										<include name="**/*.jsp"   />
+										<include name="mobile/**"  />
+									</fileset>
+								</scp> -->
+
+								<!-- 3.2 SCP to PROD WAS#2 -->
+								<!-- <scp todir="${prod.LGEWTAMS02V.scp.user}:${prod.LGEWTAMS02V.scp.password}@${prod.LGEWTAMS02V.scp.host}:/${prod.LGEWTAMS02V.scp.was.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<include name="WEB-INF/**" />
+										<include name="**/*.jsp"   />
+										<include name="mobile/**"  />
+									</fileset>
+								</scp> -->
+
+
+								<!-- 4. SCP to PROD WEB Server -->
+								<!-- 4.1 SCP to PROD inner WEB#1 -->
+								<!-- <scp todir="${prod.LGEWTAMS01V.scp.user}:${prod.LGEWTAMS01V.scp.password}@${prod.LGEWTAMS01V.scp.host}:/${prod.LGEWTAMS01V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp> -->
+
+								<!-- 4.2 SCP to PROD inner WEB#2 -->
+								<!-- <scp todir="${prod.LGEWTAMS02V.scp.user}:${prod.LGEWTAMS02V.scp.password}@${prod.LGEWTAMS02V.scp.host}:/${prod.LGEWTAMS02V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp> -->
+
+
+								<!-- 4.3 SCP to PROD outter WEB#1 -->
+								<!-- <scp todir="${prod.LGEHTAMS01V.scp.user}:${prod.LGEHTAMS01V.scp.password}@${prod.LGEHTAMS01V.scp.host}:/${prod.LGEHTAMS01V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp> -->
+
+								<!-- 4.4 SCP to PROD outter WEB#2 -->
+								<!-- <scp todir="${prod.LGEHTAMS02V.scp.user}:${prod.LGEHTAMS02V.scp.password}@${prod.LGEHTAMS02V.scp.host}:/${prod.LGEHTAMS02V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp> -->
+
+							</tasks>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>ant</groupId>
+						<artifactId>ant-commons-net</artifactId>
+						<version>1.6.5</version>
+					</dependency>
+					<dependency>
+						<groupId>commons-net</groupId>
+						<artifactId>commons-net</artifactId>
+						<version>1.4.1</version>
+					</dependency>
+					<dependency>
+						<groupId>org.apache.ant</groupId>
+						<artifactId>ant-jsch</artifactId>
+						<version>1.8.4</version>
+					</dependency>
+
+				</dependencies>
+			</plugin>
+            <plugin>
+        	    <groupId>org.apache.maven.plugins</groupId>
+        		<artifactId>maven-deploy-plugin</artifactId>
+        		<version>2.7</version>
+      		</plugin>
+		</plugins>
+	</build>
+</project>
+
+***************** build (build_prod.xml)
+
+<?xml version='1.0' encoding='utf-8'?>
+<project name='TAMS' basedir='.'>
+
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+				<!-- 개발서버내에서 Jenkins의 빌드 완료된 디렉토리 (FTP전송을 위한 소스디렉토리) -->
+				<property name="was.stage" value="/sorc001/appadm/stage/BD-TAMS-PROD" />
+
+				<!-- 개발서버에 BizActor 디렉토리 (컴파일 Dependency)-->
+				<property name="bizactor.lib" value="/sorc001/appadm/applications/bizactor/lib" />
+
+				<property name="was.lib.dir" value="/sorc001/appadm/ciserv/jenkins/workspace/BD-TAMS-PROD/GAAI/src/main/webapp/WEB-INF/lib" />
+
+
+				<!-- 운영서버 SCP 전송 관련 Properties -->
+				<!-- 외부망 웹서버 #1 -->
+				<property name="prod.LGEHTAMS01V.scp.host" value="165.186.128.39" />
+				<property name="prod.LGEHTAMS01V.scp.password" value="!dlatl00" />
+				<property name="prod.LGEHTAMS01V.scp.user" value="midadm" />
+				<property name="prod.LGEHTAMS01V.scp.web.dir" value="/sorc001/appadm/applications/htdocs" />
+				<!-- 외부망 웹서버 #2 -->
+				<property name="prod.LGEHTAMS02V.scp.host" value="165.186.128.40" />
+				<property name="prod.LGEHTAMS02V.scp.password" value="!dlatl00" />
+				<property name="prod.LGEHTAMS02V.scp.user" value="midadm" />
+				<property name="prod.LGEHTAMS02V.scp.web.dir" value="/sorc001/appadm/applications/htdocs" />
+				<!-- 내부망 웹서버 #1 -->
+				<property name="prod.LGEWTAMS01V.scp.host" value="10.185.222.147" />
+				<property name="prod.LGEWTAMS01V.scp.password" value="!dlatl00" />
+				<property name="prod.LGEWTAMS01V.scp.user" value="midadm" />
+				<property name="prod.LGEWTAMS01V.scp.was.dir" value="/sorc001/appadm/applications/bizactor/GAAI" />
+				<property name="prod.LGEWTAMS01V.scp.web.dir" value="/sorc001/appadm/applications/htdocs" />
+				<!-- 내부망 웹서버 #2 -->
+				<property name="prod.LGEWTAMS02V.scp.host" value="10.185.222.148" />
+				<property name="prod.LGEWTAMS02V.scp.password" value="!dlatl00" />
+				<property name="prod.LGEWTAMS02V.scp.user" value="midadm" />
+				<property name="prod.LGEWTAMS02V.scp.was.dir" value="/sorc001/appadm/applications/bizactor/GAAI" />
+				<property name="prod.LGEWTAMS02V.scp.web.dir" value="/sorc001/appadm/applications/htdocs" />
+
+				<property name="prod.scp.port" value="22222" />
+	
+<target name="deploy">
+	<!-- 3. SCP to PROD WAS -->
+								<!-- 3.1 SCP to PROD WAS#1 -->
+								<scp todir="${prod.LGEWTAMS01V.scp.user}:${prod.LGEWTAMS01V.scp.password}@${prod.LGEWTAMS01V.scp.host}:${prod.LGEWTAMS01V.scp.was.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<include name="WEB-INF/**" />
+										<include name="**/*.jsp"   />
+										<include name="mobile/**"  />
+									</fileset>
+								</scp>
+
+								<!-- 3.2 SCP to PROD WAS#2 -->
+								<scp todir="${prod.LGEWTAMS02V.scp.user}:${prod.LGEWTAMS02V.scp.password}@${prod.LGEWTAMS02V.scp.host}:${prod.LGEWTAMS02V.scp.was.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<include name="WEB-INF/**" />
+										<include name="**/*.jsp"   />
+										<include name="mobile/**"  />
+									</fileset>
+								</scp>
+
+
+								<!-- 4. SCP to PROD WEB Server -->
+								<!-- 4.1 SCP to PROD inner WEB#1 -->
+								<scp todir="${prod.LGEWTAMS01V.scp.user}:${prod.LGEWTAMS01V.scp.password}@${prod.LGEWTAMS01V.scp.host}:${prod.LGEWTAMS01V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp>
+
+								<!-- 4.2 SCP to PROD inner WEB#2 -->
+								<scp todir="${prod.LGEWTAMS02V.scp.user}:${prod.LGEWTAMS02V.scp.password}@${prod.LGEWTAMS02V.scp.host}:${prod.LGEWTAMS02V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp>
+
+								<!-- 4.3 SCP to PROD outter WEB#1 -->
+								<scp todir="${prod.LGEHTAMS01V.scp.user}:${prod.LGEHTAMS01V.scp.password}@${prod.LGEHTAMS01V.scp.host}:${prod.LGEHTAMS01V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp>
+
+								<!-- 4.4 SCP to PROD outter WEB#2 -->
+								<scp todir="${prod.LGEHTAMS02V.scp.user}:${prod.LGEHTAMS02V.scp.password}@${prod.LGEHTAMS02V.scp.host}:${prod.LGEHTAMS02V.scp.web.dir}" port="${prod.scp.port}" trust="true" failonerror="false">
+									<fileset dir="${was.stage}" >
+										<exclude name="WEB-INF/**" />
+										<exclude name="**/*.jsp"   />
+									</fileset>
+								</scp>
+</target>
+</project>
