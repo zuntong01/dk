@@ -117,7 +117,7 @@ pipeline {
 pipeline {
     agent any
     environment {
-        name = 'GAAI-SA.war'
+        name = 'GAAI.war'
     }
     tools {
         maven 'LGE_MAVEN'
@@ -136,9 +136,9 @@ pipeline {
         stage ('Checkout') {
             steps {
                 echo 'Checkout'
-                sh "rm -rf GAAI_ServiceAccess"
+                sh "rm -rf GAAI"
                 //sh "if [ ! -d SEAL ] ; then /sorc001/appadm/ciserv/bin/svn co svn://10.185.246.189/svn/trunk/SEAL; fi"
-                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/trunk/GAAI_ServiceAccess"
+                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/branches/GAAI"
                 //sh "/sorc001/appadm/ciserv/bin/svn update ./SEAL"
             }
         }
@@ -150,17 +150,17 @@ pipeline {
             }
         }*/
         
-        /*stage('Build') {
+        stage('Build') {
             steps {
                 echo 'Now Build'
-               sh "mvn -f GAAI/pom_dev.xml clean package"
+               sh "mvn -f GAAI/pom_prod.xml clean package"
             }
-        }*/
+        }
             
         stage('Deploy') {
             steps {
                 echo 'Deploy'
-                sh "ant -buildfile GAAI_ServiceAccess/build_prod.xml all"
+                sh "ant -buildfile GAAI/build_prod.xml deploy"
             }
         }
     }
