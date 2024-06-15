@@ -3,8 +3,9 @@
 #### <b><span style="color:cyan">[스크립트 설명]</span></b>  
 ```bash
 maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 위한 설정파일)
-
-
+※ 별도의 추가 설정파일 : (해당프로젝트에서는 별도파일에 적용된 설정은 없는듯)
+    1. settings.xml : maven빌드의 글로벌 설정이 가능 / ${MAVEN경로}/conf 또는 ~/.m2 경로에 있다면 기본적용됨 (예시 : repo 설정, profile 설정등이 가능 )
+    2. config.properties : pom.xml 에서 사용하는 변수 분리해서 관리 (pom.xml에 properties-maven-plugin을 사용하여 외부변수파일값을 읽어 올수 있음)
 ```
 
 #### <b><span style="color:cyan">[pom.xml (GDMi개발) 스크립트]</span></b>
@@ -67,6 +68,7 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
 <!--
     <repository> maven 저장소 의존성파일을 검색위치 정의 (해당저장소에서 > .m2디렉토리로 가져옴 / 저장소에 접근할수 없다면, m2디렉토리를 검색함)
     <pluginRepository> Maven 플러그인을 검색하는 곳을 정의
+    ※별도의 인증이 없는 repo인듯... ID/PW 정의 설정이 없음
 -->
     
 <repositories>
@@ -109,8 +111,6 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
 </profiles>
 
 <!--
-
--->
   <build 섹션> 빌드프로세스에 설정들에 대해 명시
     <defaultGoal> : mvn 명령어 실행시 명시적인 목표지정하지 않았을때, 사용되는 기본 목표
                 예) package : build + packaging(예:war)
@@ -128,7 +128,7 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
                3. src/main/resources 디렉토리를 모두 복사하여 WAR파일의 WEB-INF/classes 하위에 위치시킴
                4. src/main/wbapp 디렉토리의 /export, /import, /fileupload 는 WAR파일에 포함안시키는걸로 예상되지만, WAR파일에 실제 포함되어 있어서, 안먹은듯...
                5. <profile 섹션>에서 정의한 env 변수를 사영하여 src/main/profiles/${env}에 위치한 파일들을 WEB-INF/lcasses에 위치 시킴
-
+-->
 <build>
   <defaultGoal>package</defaultGoal>
   <directory>${basedir}/target</directory>
