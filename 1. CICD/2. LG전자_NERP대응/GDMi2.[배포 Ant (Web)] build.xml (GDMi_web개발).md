@@ -190,8 +190,8 @@ ant 빌드를 하기위한 빌드스크립트
 <!--    complie(target) : copy(target)이 실행된 후 실행됨
             1. src/main/java 의 파일일 중에 .java파일빼고 모든 파일, 디렉토리를 src/main/webapp/WEB-INF/classes 에 복사
             2. <javac> 로 자바소스 컴파일함 
-                // yes : 별도의 JVM 에서 컴파일 실행 // includeantruntime : Ant 런타임 라이브러리 컴파일 클래스경로에 포함안시킴
-                // 컴파일할 경로대상 : src/main/java // 위에서 <path id> 로 지정한 경로를 컴파일 클래스패스로 지정함.
+                // yes : 별도의 JVM 에서 컴파일 실행 // i~~ncludeantruntime : Ant 런타임 라이브러리 컴파일 클래스경로에 포함안시킴
+                // 컴파일할 경로대상 : src/main/java // 위에서 <path id> 로 지정한 경로를 컴파일 클래스패스로 지정함~~.
 -->
 <target name="compile" depends="copy">
     <echo>Compile Start...</echo>
