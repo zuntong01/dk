@@ -117,7 +117,7 @@ pipeline {
 pipeline {
     agent any
     environment {
-        name = 'GAAI-SA.war'
+        name = 'GAAI.war'
     }
     tools {
         maven 'LGE_MAVEN'
@@ -136,9 +136,9 @@ pipeline {
         stage ('Checkout') {
             steps {
                 echo 'Checkout'
-                sh "rm -rf GAAI_ServiceAccess"
+                sh "rm -rf GAAI"
                 //sh "if [ ! -d SEAL ] ; then /sorc001/appadm/ciserv/bin/svn co svn://10.185.246.189/svn/trunk/SEAL; fi"
-                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/trunk/GAAI_ServiceAccess"
+                sh "yes | /sorc001/appadm/ciserv/svn/bin/svn co --username admin --password admin svn://10.185.246.78/NTAMS/branches/GAAI"
                 //sh "/sorc001/appadm/ciserv/bin/svn update ./SEAL"
             }
         }
@@ -150,17 +150,17 @@ pipeline {
             }
         }*/
         
-        /*stage('Build') {
+        stage('Build') {
             steps {
                 echo 'Now Build'
-               sh "mvn -f GAAI/pom_dev.xml clean package"
+               sh "mvn -f GAAI/pom_prod.xml clean package"
             }
-        }*/
+        }
             
         stage('Deploy') {
             steps {
                 echo 'Deploy'
-                sh "ant -buildfile GAAI_ServiceAccess/build_prod.xml all"
+                sh "ant -buildfile GAAI/build_prod.xml deploy"
             }
         }
     }
@@ -1555,3 +1555,205 @@ sonar.login=sqp_a5ee1eb8a413cb2c87164c528d92cd23c8a6ebab
 								</scp>
 </target>
 </project>
+
+
+
+####### build_dev.xml (SA DEV)
+
+<?xml version='1.0' encoding='UTF-8'?>
+<project name='SecurityServiceAccess' default='all' basedir='.'>
+	<property name='app.name'                value='${ant.project.name}' />
+    <property name='java.encoding'           value='UTF-8' />
+    <property name='src.dir.java'            value='src' />
+    <property name='lib.dir.runtime'         value='lib' />
+	<property name='build.dir'               value='../build' />
+    <property name='build.dir.classes'       value='${build.dir}/classes' />
+	<property name='target.dir'              value='/sorc001/appadm/applications/bizactor/lib' />
+	<property name='target.jjobs.dir'        value='/sorc001/appadm/applications/bizactor_jjobs/lib' />
+
+	<!--2017.06.12 JJOBS 경로 추가 TAEHO LEE-->
+    <property name='target.jjobs.dir.201706'        value='/sorc001/appadm/applications/jjobs/bizactorlib' />
+
+
+
+	<target name='all' depends='init, compile, replace, jar, deploy'/>
+
+    <target name='init'>
+        <delete dir='${build.dir}' quiet='true' />
+        <mkdir  dir='${build.dir}' />
+        <mkdir  dir='${build.dir.classes}'/>
+    </target>
+
+    <target name='compile'>
+        <javac srcdir='${src.dir.java}' destdir='${build.dir.classes}'
+            encoding='${java.encoding}'
+        	debug="true" >
+            <classpath>
+                <fileset dir='${lib.dir.runtime}' />
+            </classpath>
+        </javac>
+    </target>
+
+	<target name='replace' depends='compile'>
+	    <copy file='${src.dir.java}/tams_sa_config_dev.properties' tofile='${build.dir.classes}/tams_sa_config.properties' overwrite="true"/>
+	</target>
+
+    <target name='jar' depends='compile'>
+        <jar destfile='${build.dir}/tamsServiceAccess.jar' basedir='${build.dir.classes}'/>
+    </target>
+
+	<target name='deploy' depends='jar'>
+		<copy file="${build.dir}/tamsServiceAccess.jar" tofile="${target.dir}/tamsServiceAccess.jar"/>
+		<copy file="${build.dir}/tamsServiceAccess.jar" tofile="${target.jjobs.dir}/tamsServiceAccess.jar"/>
+
+		<!--2017.06.12 JJOBS 경로 추가 TAEHO LEE-->
+		<copy file="${build.dir}/tamsServiceAccess.jar" tofile="${target.jjobs.dir.201706}/tamsServiceAccess.jar"/>
+
+
+		<!--
+		<copy todir="${target.dir.mail.template}">
+		    <fileset dir="${src.dir.mail.template}"/>
+		</copy>
+		-->
+    </target>
+</project>
+
+####### build.xml (SA PROD)
+<?xml version='1.0' encoding='UTF-8'?>
+<project name='SecurityServiceAccess' default='all' basedir='.'>
+	<property name='app.name'                value='${ant.project.name}' />
+    <property name='java.encoding'           value='UTF-8' />
+    <property name='src.dir.java'            value='src' />
+    <property name='lib.dir.runtime'         value='lib' />
+	<property name='build.dir'               value='../build_prod' />
+    <property name='build.dir.classes'       value='${build.dir}/classes' />
+	<property name='target.dir'              value='/sorc001/appadm/applications/bizactor/lib' />
+	<property name='target.gaai.dir'         value='/sorc001/appadm/applications/bizactor/lib' />
+	<property name='target.jjobs.dir'        value='/sorc001/appadm/applications/bizactor_jjobs/lib' />
+
+    <!-- 2017-06-12 Taeho Lee JJOBS 경로에 SA추가 수정 -->
+	<property name='target.jjobs.dir.201706'        value='/sorc001/appadm/applications/jjobs/bizactorlib' />
+
+	<!-- 운영서버 SCP 전송 관련 Properties -->
+	<!-- 내부WAS #1 -->
+	<property name="prod.LGEWTAMS01V.scp.host"      value="10.185.222.147"                                   />
+	<property name="prod.LGEWTAMS01V.scp.password"  value="!dlatl00"                                         />
+	<property name="prod.LGEWTAMS01V.scp.user"      value="midadm"                                           />
+
+	<!-- 내부WAS #2 -->
+	<property name="prod.LGEWTAMS02V.scp.host"      value="10.185.222.148"                                   />
+	<property name="prod.LGEWTAMS02V.scp.password"  value="!dlatl00"                                         />
+	<property name="prod.LGEWTAMS02V.scp.user"      value="midadm"                                           />
+
+	<!-- 배치서버 #1 -->
+	<property name="prod.LGEBTAMS01V.scp.host"      value="10.185.222.149"                                   />
+	<property name="prod.LGEBTAMS01V.scp.password"  value="!dlatl00"                                         />
+	<property name="prod.LGEBTAMS01V.scp.user"      value="midadm"                                           />
+
+	<!-- 배치서버 #2 -->
+	<property name="prod.LGEBTAMS02V.scp.host"      value="10.185.222.150"                                   />
+	<property name="prod.LGEBTAMS02V.scp.password"  value="!dlatl00"                                         />
+	<property name="prod.LGEBTAMS02V.scp.user"      value="midadm"                                           />
+
+
+	<target name='all' depends='init, compile, replace, jar, copyToProd'/>
+
+    <target name='init'>
+        <delete dir='${build.dir}' quiet='true' />
+        <mkdir  dir='${build.dir}' />
+        <mkdir  dir='${build.dir.classes}'/>
+    </target>
+
+    <target name='compile'>
+        <javac srcdir='${src.dir.java}' destdir='${build.dir.classes}'
+            encoding='${java.encoding}'
+        	debug="true" >
+            <classpath>
+                <fileset dir='${lib.dir.runtime}' />
+            </classpath>
+        </javac>
+    </target>
+
+	<target name='replace' depends='compile'>
+	    <copy file='${src.dir.java}/tams_sa_config_prod.properties' tofile='${build.dir.classes}/tams_sa_config.properties' overwrite="true"/>
+	</target>
+
+    <target name='jar' depends='compile'>
+        <jar destfile='${build.dir}/tamsServiceAccess.jar' basedir='${build.dir.classes}'/>
+    </target>
+
+	<target name="copyToProd">
+		<!-- 운영서버 SCP 전송 -->
+		<!-- 내부WAS #1 -->
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEWTAMS01V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEWTAMS01V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEWTAMS01V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.dir}"                    />
+		</antcall>
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEWTAMS01V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEWTAMS01V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEWTAMS01V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.gaai.dir}"                    />
+		</antcall>
+
+		<!-- 내부WAS #2 -->
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEWTAMS02V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEWTAMS02V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEWTAMS02V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.dir}"                    />
+		</antcall>
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEWTAMS01V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEWTAMS01V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEWTAMS01V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.gaai.dir}"                    />
+		</antcall>
+
+		<!-- 배치서버 #1 -->
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEBTAMS01V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEBTAMS01V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEBTAMS01V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.jjobs.dir}"              />
+		</antcall>
+
+		<!-- 배치서버 #2 -->
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEBTAMS02V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEBTAMS02V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEBTAMS02V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.jjobs.dir}"              />
+		</antcall>
+
+
+		<!-- 2017-06-12 Taeho Lee 운영 Bizactor SA 추가 배치서버 #1 -->
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEBTAMS01V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEBTAMS01V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEBTAMS01V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.jjobs.dir.201706}"              />
+		</antcall>
+
+		<!-- 2017-06-12 Taeho Lee 운영 Bizactor SA 추가 배치서버 #2 -->
+		<antcall target="scpToProd">
+			<param name="scp.host"      value="${prod.LGEBTAMS02V.scp.host}"     />
+			<param name="scp.user"      value="${prod.LGEBTAMS02V.scp.user}"     />
+			<param name="scp.password"  value="${prod.LGEBTAMS02V.scp.password}" />
+			<param name="scp.dir.root"  value="${target.jjobs.dir.201706}"              />
+		</antcall>
+
+	</target>
+
+	<target name="scpToProd">
+		<scp todir="${scp.user}:${scp.password}@${scp.host}:${scp.dir.root}" port="22222" trust="true" sftp="true" failonerror="false">
+			<fileset file='${build.dir}/tamsServiceAccess.jar' />
+		</scp>
+	</target>
+
+</project>
+
+
+
