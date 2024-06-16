@@ -74,7 +74,8 @@ NTAMS의 SA라는 jar파일을 빌드하기 위한 별도의 프로세스 (ant �
             <javac> 로 자바소스 컴파일함 
                 // ${workspace}/${프로젝트명}/src 하위에 위치한 소스를 컴파일 하여 ->  ${Workspace}/build_prod/classes 저장
                 // 컴파일시 필요한 jar파일을 ${workspace}/${프로젝트명}/lib 에 저장하고, classpath로 지정함
-                // ※ source="1.8", target="1.8" 빌드호환성을 명시하지 않아서, 현재 ant가 사용하는 java버젼이 무엇인지 확인필요.... (젠킨스의 java.home을 따라갈듯)
+                // ※ source="1.8", target="1.8" 빌드호환성을 명시하지 않아서, 현재 ant가 사용하는 java버젼이 무엇인지 확인필요
+				// 젠킨스의 java.home을 따라갈수도 있고, 파이프라인에서 명시한 tools의 버젼을 따라갈수 있음
 -->	
     <target name='compile'>
         <javac srcdir='${src.dir.java}' destdir='${build.dir.classes}'
