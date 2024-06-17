@@ -1,0 +1,307 @@
+###### GSCP_DEV (script/build_dev.xml)
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="../" default="build" name="gscp_dev">
+	<!-- 2022.09.26 김상화 [RITM0726880] Jenkins 빌드시 파일명에 날짜, 시간 제거 처리건 -->
+	
+    <!--개발/스테이지/운영 구분-->
+    <property name="env.type" value="dev" />
+
+    <property file="script/build_${env.type}.properties" />
+
+    <taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+    <typedef resource="org/tigris/subversion/svnant/svnantlib.xml" />
+
+    <!-- taskdef name="ssh" classname="com.sshtools.ant.Ssh" -->
+
+    <property name="debuglevel" value="source,lines,vars" />
+    <property name="target" value="1.7" />
+    <property name="source" value="1.7" />
+
+    <property name="source.dir" value="src" />
+    <property name="resource.dir" value="src" />
+    <property name="webroot.dir" value="web" />
+    <property name="target.dir" value="target" />
+    <property name="target.dir.web" value="${target.dir}/WEB" />
+    <property name="target.dir.was" value="${target.dir}/WAS" />
+
+    <property name="deploy.target.web" value="${server.web.basedir}/${ant.project.name}.war" />
+    <property name="deploy.target.was" value="${server.was.basedir}/${ant.project.name}.war" />
+
+    <tstamp>
+        <format property="dtstamp" pattern="yyyyMMdd_HH" />
+    	<!-- [RITM0726880] Add -->
+        <format property="TODAY" pattern="yyyyMMdd_HHmmss" />
+    </tstamp>
+
+    <path id="project.classpath">
+        <pathelement location="web/WEB-INF/classes" />
+        <fileset dir="${tomcat.home}/lib" includes="**/*.jar" />
+
+        <fileset dir="${webroot.dir}/WEB-INF/lib">
+            <include name="*.jar" />
+        </fileset>
+
+    </path>
+
+    <target name="build" depends="clean,compile,webdeployready,wasdeployready,wasdeploy,webdeploy" />
+
+    <target name="clean">
+        <delete dir="${target.dir}" verbose="true" />
+        <mkdir dir="${target.dir.web}" />
+        <mkdir dir="${target.dir.was}/WEB-INF/classes" />
+    </target>
+
+    <target name="compile">
+        <echo message="${source.dir}" />
+        <javac debug="true" debuglevel="${debuglevel}" destdir="${target.dir.was}/WEB-INF/classes" source="${source}" target="${target}" encoding="UTF8">
+            <src path="${source.dir}" />
+            <classpath refid="project.classpath" />
+        </javac>
+        <copy todir="${target.dir.was}/WEB-INF/classes" verbose="true">
+            <fileset dir="${resource.dir}">
+                <include name="**/*.properties" />
+                <include name="**/*.xml" />
+            </fileset>
+            <fileset dir="script/${env.type}">
+                <include name="XPLATFORM_Server_License.xml" />
+            </fileset>
+        </copy>
+    </target>
+
+    <!-- WEB Deploy ready -->
+    <target name='webdeployready'>
+        <sync todir='${target.dir.web}' includeemptydirs='no' verbose="true">
+            <fileset dir='${webroot.dir}'>
+                <exclude name="**/*.jsp" />
+                <exclude name="**/*.jspf" />
+                <exclude name="**/WEB-INF/**" />
+            </fileset>
+            <fileset dir='.'>
+                <include name="xui/**" />
+            </fileset>
+        </sync>
+        <copy file="script/XPLATFORM_Client_License.xml" tofile="${target.dir.web}/license/XPLATFORM_Client_License.xml" overwrite="true" verbose="true" />
+    	<copy file="script/${env.type}/default_typedef.xml" tofile="${target.dir.web}/xui/default_typedef.xml" overwrite="true" verbose="true"/>
+    	<copy file="script/${env.type}/global_${env.type}.xml" tofile="${target.dir.was}/WEB-INF/devonhome/navigation/dev/global.xml" overwrite="true" verbose="true"/>    	
+    	<!-- [RITM0726880] Modify 2022.09.21 빌드시 생성되는 파일명에 날짜시간 제거 -->
+    	<!--<tar destfile="${target.dir}/${ant.project.name}-${dtstamp}-web.tar" basedir="${target.dir.web}">-->
+    	<tar destfile="${target.dir}/${ant.project.name}-web.tar" basedir="${target.dir.web}">
+            <include name="**/*" />
+        </tar>
+        <!--gzip src="${target.dir}/${ant.project.name}-${dtstamp}-web.tar" destfile="${target.dir}/${ant.project.name}-${dtstamp}-web.tar.gz" -->
+    </target>
+
+    <!-- WAS Deploy ready -->
+    <target name='wasdeployready'>
+        <copy todir='${target.dir.was}' includeemptydirs='yes' verbose="true">
+            <fileset dir='${webroot.dir}'>
+                <include name="**/*.jsp" />
+                <include name="**/*.jspf" />
+                <include name="**/*.jar" />
+                <include name="**/*.xml" />
+                <include name="**/*.dtd" />
+                <include name="**/*.properties" />
+                <exclude name="license/**" />
+            </fileset>
+        </copy>
+        <copy todir='${target.dir.was}/WEB-INF' includeemptydirs='yes' verbose="true">
+            <fileset dir='.'>
+                <include name="devonhome/**" />
+                <exclude name="devonhome/logs" />
+                <exclude name="devonhome/upload" />
+            </fileset>
+        </copy>
+        <copy file="script/${env.type}/web.xml" tofile="${target.dir.was}/WEB-INF/web.xml" overwrite="true" verbose="true" />
+        <copy file="script/${env.type}/devon-core.xml" tofile="${target.dir.was}/WEB-INF/devonhome/conf/devon-core.xml" overwrite="true" verbose="true" />
+        <copy file="script/${env.type}/devon-framework.xml" tofile="${target.dir.was}/WEB-INF/devonhome/conf/product/devon-framework.xml" overwrite="true" verbose="true" />
+        <copy file="script/${env.type}/gscp.xml" tofile="${target.dir.was}/WEB-INF/devonhome/conf/project/gscp.xml" overwrite="true" verbose="true" />
+        <copy file="script/${env.type}/devon-scheduler.xml" tofile="${target.dir.was}/WEB-INF/devonhome/scheduler/devon-scheduler.xml" overwrite="true" verbose="true" />
+    	<!-- [RITM0726880] Modify 2022.09.26 빌드시 생성되는 파일명에 날짜시간 제거 -->
+    	<!--<tar destfile="${target.dir}/${ant.project.name}-${dtstamp}-was.tar" basedir="${target.dir.was}">-->
+    	<tar destfile="${target.dir}/${ant.project.name}-was.tar" basedir="${target.dir.was}">
+            <include name="**/*" />
+        </tar>
+        <!--gzip src="${target.dir}/${ant.project.name}-${dtstamp}-was.tar" destfile="${target.dir}/${ant.project.name}-${dtstamp}-was.tar.gz" -->
+    </target>
+
+    <!-- WEB Deploy -->
+    <target name='webdeploy'>
+
+
+        <!--
+        <scp todir="${userid}:${password}@${web.ip}:${server.web.basedir}" trust="true" verbose="false">
+            <fileset dir="${target.dir}">
+                <include name="${ant.project.name}-${dtstamp}-web.tar" />
+            </fileset>
+        </scp>
+        -->
+        <!--
+        <sshexec host="${web.ip}" username="${userid}" password="${password}" trust="true" command="tar -C ${server.web.basedir} -xvf ${server.web.basedir}/${ant.project.name}-${dtstamp}-web.tar" />
+        <sshexec host="${web.ip}" username="${userid}" password="${password}" trust="true" failonerror="false" command="rm -rf ${server.web.basedir}/${ant.project.name}-${dtstamp}-web.tar" />
+        -->
+        
+    	<!-- [RITM0726880] Modify 2022.09.26 빌드시 생성되는 파일명에 날짜시간 제거 -->
+        <!--<copy file="${target.dir}/${ant.project.name}-${dtstamp}-web.tar" tofile="${server.web.basedir}/${ant.project.name}-${dtstamp}-web.tar" overwrite="true" verbose="true" />-->
+    	<copy file="${target.dir}/${ant.project.name}-web.tar" tofile="${server.web.basedir}/${ant.project.name}-web.tar" overwrite="true" verbose="true" />
+        <delete dir="${server.web.basedir}/htdocs" includeEmptyDirs="true" />
+        <mkdir dir="${server.web.basedir}/htdocs" />
+    	<!-- [RITM0726880] Modify 2022.09.26 빌드시 생성되는 파일명에 날짜시간 제거 -->
+    	<!--<untar src="${server.web.basedir}/${ant.project.name}-${dtstamp}-web.tar" dest="${server.web.basedir}/htdocs" />-->
+        <!--<delete file="${server.web.basedir}/${ant.project.name}-${dtstamp}-web.tar" />-->
+    	<untar src="${server.web.basedir}/${ant.project.name}-web.tar" dest="${server.web.basedir}/htdocs" />
+    	<copy file="${server.web.basedir}/${ant.project.name}-web.tar" tofile="${server.web.basedir}/web_bak/${ant.project.name}-web_${TODAY}.tar" overwrite="true" verbose="true" />
+    	<delete file="${server.web.basedir}/${ant.project.name}-web.tar" />
+    </target>
+
+    <!-- WAS Deploy -->
+    <target name='wasdeploy'>
+        <!--
+        <scp todir="${userid}:${password}@${was.ip}:${server.was.basedir}" trust="true" verbose="false">
+            <fileset dir="${target.dir}">
+                <include name="${ant.project.name}-${dtstamp}-was.tar" />
+            </fileset>
+        </scp>
+        -->
+    	<!-- [RITM0726880] Modify 2022.09.26 빌드시 생성되는 파일명에 날짜시간 제거 -->
+        <!--<copy file="${target.dir}/${ant.project.name}-${dtstamp}-was.tar" tofile="${server.was.basedir}/${ant.project.name}-${dtstamp}-was.tar" overwrite="true" verbose="true" />-->
+    	<copy file="${target.dir}/${ant.project.name}-was.tar" tofile="${server.was.basedir}/${ant.project.name}-was.tar" overwrite="true" verbose="true" />
+        <delete dir="${server.was.basedir}/mainWebApp.war" includeEmptyDirs="true" />
+        <mkdir dir="${server.was.basedir}/mainWebApp.war" />
+    	<!-- [RITM0726880] Modify 2022.09.26 빌드시 생성되는 파일명에 날짜시간 제거 / 빌드파일 백업-->
+        <!--<untar src="${server.was.basedir}/${ant.project.name}-${dtstamp}-was.tar" dest="${server.was.basedir}/mainWebApp.war" />-->
+        <!--<delete file="${server.was.basedir}/${ant.project.name}-${dtstamp}-was.tar" />-->
+    	<untar src="${server.was.basedir}/${ant.project.name}-was.tar" dest="${server.was.basedir}/mainWebApp.war" />
+    	<copy file="${server.was.basedir}/${ant.project.name}-was.tar" tofile="${server.was.basedir}/was_bak/${ant.project.name}-was_${TODAY}.tar" overwrite="true" verbose="true" />
+        <delete file="${server.was.basedir}/${ant.project.name}-was.tar" />
+
+        <!--
+        <sshexec host="${was.ip}" username="${userid}" password="${password}" trust="true" failonerror="false" command="rm -rf ${server.was.basedir}/mainWebApp.war/*" />
+        <sshexec host="${was.ip}" username="${userid}" password="${password}" trust="true" failonerror="false" command="mkdir -p ${server.was.basedir}/mainWebApp.war" />
+        <sleep seconds="1" />
+        <sshexec host="${was.ip}" username="${userid}" password="${password}" trust="true" command="tar -C ${server.was.basedir}/mainWebApp.war -xvf ${server.was.basedir}/${ant.project.name}-${dtstamp}-was.tar" />
+        <sshexec host="${was.ip}" username="${userid}" password="${password}" trust="true" failonerror="false" command="rm -rf ${server.was.basedir}/${ant.project.name}-${dtstamp}-was.tar" />
+        -->
+    </target>
+
+
+    <!-- WEB Deploy -->
+    <!--
+    <target name='web_deploy'>
+        <echo message="was_deploy" />
+        <foreach list="${web.ip}" target="webdeploy" param="web.ip" parallel="true" />
+    </target>
+    -->
+
+    <!-- WAS Deploy -->
+    <!--
+    <target name='was_deploy'>
+        <echo message="was_deploy" />
+        <foreach list="${was.ip}" target="wasdeploy" param="was.ip" parallel="true" />
+    </target>
+    -->
+</project>
+
+
+
+###### GSCP_DEV (script/build_dev.properties)
+
+#Dev
+userid=gscpadm
+
+#server ip
+web.ip=10.185.220.81
+was.ip=10.185.220.81
+
+#directory infomation
+stage.dir=stage
+devonhome.dir=/sorc001/gscpadm/applications
+
+tomcat.home=/engn001/tomcat/8.0
+tomcat.server.dir=/engn001/tomcat/8.0/servers/gscp_8180
+server.web.basedir=/sorc001/gscpadm/applications
+server.was.basedir=/sorc001/gscpadm/applications
+
+
+###### GSCP_SONAR (script/sonar/build_sonar.xm)
+
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project basedir="../../" default="build" name="gscp_sonar" xmlns:sonar="antlib:org.sonar.ant">
+
+	<!--개발/스테이지/운영 구분-->
+	<property name="env.type" value="dev" />
+
+	<property file="script/build_${env.type}.properties" />
+
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+	<typedef resource="org/tigris/subversion/svnant/svnantlib.xml" />
+	<taskdef resource="org/sonar/ant/antlib.xml" />
+
+	<!-- taskdef name="ssh" classname="com.sshtools.ant.Ssh" -->
+	<property name="debuglevel" value="source,lines,vars" />
+	<property name="target" value="1.7" />
+	<property name="source" value="1.7" />
+
+	<property name="source.dir" value="src" />
+	<property name="resource.dir" value="src" />
+	<property name="webroot.dir" value="web" />
+	<property name="target.dir" value="target" />
+	<property name="target.dir.web" value="${target.dir}/WEB" />
+	<property name="target.dir.was" value="${target.dir}/WAS" />
+	<property name="target.dir.report" value="${target.dir}/surefire-reports" />
+
+	<!--property name="deploy.target.web" value="${server.web.basedir}/${ant.project.name}.war" -->
+	<property name="deploy.target.was" value="${server.was.basedir}/${ant.project.name}.war" />
+
+	<!-- Sonar 프로퍼티 -->
+	<property name="sonar.projectKey" value="GSCP" />
+	<property name="sonar.projectName" value="GSCP" />
+	<property name="sonar.projectVersion" value="1.0" />
+	<property name="sonar.language" value="java" />
+	<property name="sonar.sources" value="src" />
+	<property name="sonar.java.binaries" value="${target.dir.was}/WEB-INF/classes" />
+	<property name="sonar.java.libraries" value="${tomcat.home}/lib/**/*.jar,${webroot.dir}/WEB-INF/lib/*.jar" />
+	<property name="sonar.sourceEncoding" value="UTF-8" />
+	<property name="sonar.scm.disabled" value="True" />
+	<property name="sonar.java.source" value="1.7" />
+	<property name="sonar.java.target" value="1.7" />
+	<property name="sonar.jdbc.url" value="jdbc:h2:tcp://localhost:9092/sonar" />
+	<property name="sonar.jdbc.username" value="sonar" />
+	<property name="sonar.jdbc.password" value="sonar" />
+	<property name="sonar.host.url" value="http://10.185.220.81:9000" />
+	<!-- Sonar 프로퍼티 끝-->
+
+
+	<path id="project.classpath">
+		<!--pathelement location="web/WEB-INF/classes" -->
+		<fileset dir="${tomcat.home}/lib" includes="**/*.jar" />
+
+		<fileset dir="${webroot.dir}/WEB-INF/lib">
+			<include name="*.jar" />
+		</fileset>
+
+	</path>
+
+	<target name="build" depends="clean,compile,sonar" />
+
+	<target name="clean">
+		<delete dir="${target.dir}" verbose="true" />
+		<mkdir dir="${target.dir.was}/WEB-INF/classes" />
+		<mkdir dir="${target.dir.report}" />
+		<mkdir dir="${target.dir.report}" />
+	</target>
+
+	<target name="compile">
+		<echo message="${source.dir}" />
+		<javac debug="true" debuglevel="${debuglevel}" destdir="${target.dir.was}/WEB-INF/classes" source="${source}" target="${target}" encoding="UTF8">
+			<src path="${source.dir}" />
+			<classpath refid="project.classpath" />
+		</javac>
+	</target>
+
+	<target name="sonar">
+		<sonar:sonar />
+	</target>
+
+</project>
+
