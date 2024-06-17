@@ -1,0 +1,845 @@
+##### BD-SCMDB-DEV (빌드 shell - command)
+rm -rf /sorc001/appadm/applications/scmdb.war
+mkdir /sorc001/appadm/applications/scmdb.war
+cp ${WORKSPACE}/target/scmdb.war /sorc001/appadm/applications/scmdb.war
+cd /sorc001/appadm/applications/scmdb.war/
+unzip scmdb.war
+rm -rf scmdb.war
+rm -rf ./WEB-INF/classes/spring/mvc-context-fileupload.xml
+rm -rf ./WEB-INF/classes/spring/mvc-context-fileupload-prod.xml
+rm -rf ./WEB-INF/classes/config/project.properties
+mv ./WEB-INF/classes/config/project.properties_dev ./WEB-INF/classes/config/project.properties
+mv ./WEB-INF/classes/spring/mvc-context-fileupload-dev.xml ./WEB-INF/classes/spring/mvc-context-fileupload.xml
+cd /sorc001/appadm/applications/scmdb.war/
+rm -rf ./WEB-INF/lib/ojdbc6-11.2.0.3.jar
+rm -rf export
+ln -s /data001/fileupload/export/ export
+rm -rf import
+ln -s /data001/fileupload/import/ import
+rm -rf fileupload
+ln -s /data001/fileupload/temp/ fileupload
+rm -rf /sorc001/appadm/applications/htdocs
+cp -R /sorc001/appadm/applications/scmdb.war /sorc001/appadm/applications/htdocs
+
+
+##### BD-SCMDB-DEV (pom_dev.xml)
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+	<groupId>com.lge</groupId>
+	<artifactId>scmdb</artifactId>
+	<version>1.6.0</version>
+	<packaging>war</packaging>
+	<name>${project.artifactId}</name>
+	<url>http://maven.apache.org</url>
+	<description>Scmdb System</description>
+
+	<properties>
+
+		<!-- Generic properties -->
+		<java.version>1.7</java.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+
+		<maven.test.skip>false</maven.test.skip>
+		<maven.javadoc.skip>false</maven.javadoc.skip>
+
+		<!-- Spring -->
+		<org.springframework.version>4.0.9.RELEASE</org.springframework.version>
+		
+		<devonframe.version>1.6.0</devonframe.version>
+
+		<!-- commons -->
+		<commons.io.version>2.2</commons.io.version>
+		<commons.fileupload.version>1.3.1</commons.fileupload.version>
+		<commons.dbcp.version>1.4</commons.dbcp.version>
+
+		<!-- Web -->
+		<jsp.api.version>2.1</jsp.api.version>
+		<jstl.version>1.2</jstl.version>
+		<servlet.api.version>3.0.1</servlet.api.version>
+		<taglibs.version>1.1.2</taglibs.version>
+
+		<jsr250.api.version>1.0</jsr250.api.version>
+
+		<mybatis.version>3.3.0</mybatis.version>
+
+		<!-- Test -->
+		<junit.version>4.11</junit.version>
+
+		<webcontent-dir>${basedir}/src/main/webapp</webcontent-dir>
+
+
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>releases</id>
+			<name>repository for DevOn</name>
+			<layout>default</layout>
+			<url>http://10.185.219.170:6060/nexus/content/repositories/releases/</url>
+		</repository>
+		
+		
+		<repository>
+			<releases>
+			<enabled>true</enabled>
+			</releases>
+			<id>central</id>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
+
+		<!-- 
+		<repository>
+		    <id>oracle</id>
+		    <name>Oracle JDBC Repository</name>
+		    <url>http://repo.spring.io/plugins-release/</url>
+		  </repository>
+		   -->
+	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>releases</id>
+			<name>repository for DevOn</name>
+			<layout>default</layout>
+			<url>http://10.185.219.170:6060/nexus/content/repositories/releases</url>
+		</pluginRepository>
+		
+		<pluginRepository>
+			<releases>
+			<enabled>true</enabled>
+			</releases>
+			<id>central</id>
+			<url>https://repo.maven.apache.org/maven2</url>
+			</pluginRepository>
+	</pluginRepositories>
+
+	<dependencies>
+	   <!-- https://mvnrepository.com/artifact/org.springframework/spring-context-support -->
+	<dependency>
+  	  <groupId>org.springframework</groupId>
+	    <artifactId>spring-context-support</artifactId>
+ 	  <version>4.0.9.RELEASE</version>
+		</dependency>
+
+		<!-- devonframe -->
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-web</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-dataaccess</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-transaction</artifactId>
+			<version>${devonframe.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.mybatis</groupId>
+					<artifactId>mybatis</artifactId>
+				</exclusion>
+			</exclusions>
+			<scope>compile</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mybatis</groupId>
+			<artifactId>mybatis</artifactId>
+			<version>${mybatis.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-fileupload</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-paging</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-mail</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>devonframe</groupId>
+			<artifactId>devon-crypto</artifactId>
+			<version>${devonframe.version}</version>
+		</dependency>
+	
+		
+		 
+		
+		<!-- Spring -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-context</artifactId>
+			<version>${org.springframework.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-jdbc</artifactId>
+			<version>${org.springframework.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-webmvc</artifactId>
+			<version>${org.springframework.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.aspectj</groupId>
+			<artifactId>aspectjweaver</artifactId>
+			<version>1.7.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>com.googlecode.json-simple</groupId>
+			<artifactId>json-simple</artifactId>
+			<version>1.1</version>
+		</dependency>
+
+		<!-- javax -->
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>javax.servlet-api</artifactId>
+			<version>${servlet.api.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>javax.servlet</groupId>
+			<artifactId>jstl</artifactId>
+			<version>${jstl.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.annotation</groupId>
+			<artifactId>jsr250-api</artifactId>
+			<version>${jsr250.api.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>taglibs</groupId>
+			<artifactId>standard</artifactId>
+			<version>${taglibs.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<!-- Commons -->
+		<dependency>
+			<groupId>commons-dbcp</groupId>
+			<artifactId>commons-dbcp</artifactId>
+			<version>${commons.dbcp.version}</version>
+		</dependency>
+
+		<dependency>
+		  	<groupId>oracle</groupId>
+		    <artifactId>ojdbc6</artifactId>
+		    <version>11.2.0.3</version>
+		  	<scope>system</scope>
+    		<systemPath>${webcontent-dir}/WEB-INF/lib/ojdbc6-11.2.0.3.jar</systemPath>
+		</dependency>
+		
+		<!-- 커밋하면5000원 -->
+		<dependency>
+  			<groupId>org.lazyluke</groupId>
+  			<artifactId>log4jdbc-remix</artifactId>
+  			<version>0.2.7</version>
+		</dependency>
+		
+ 		<dependency>  
+              <groupId>org.slf4j</groupId>  
+             <artifactId>slf4j-log4j12</artifactId>  
+            <version>1.6.1</version>  
+        </dependency>
+		<!-- Nexacro -->
+		<dependency>
+			<groupId>com.tobesoft</groupId>
+			<artifactId>nexacro-xapi</artifactId>
+			<version>1.0</version>
+		</dependency>
+
+		<dependency>
+			<groupId>nexacro-xeni</groupId>
+			<artifactId>nexacro-xeni</artifactId>
+			<version>1.1</version>
+			<!-- <scope>system</scope> -->
+			<!-- <systemPath>${webcontent-dir}/WEB-INF/lib/nexacro-xeni-1.1.jar</systemPath> -->
+		</dependency>
+
+
+		<!-- 태그프리 파일 업로드 -->
+		<dependency>
+			<groupId>servlets.com</groupId>
+			<artifactId>cos</artifactId>
+			<version>05Nov2002</version>
+		</dependency>
+
+		<!-- DB 암호화 -->
+
+
+
+		<!-- Test -->
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>spring-test</artifactId>
+			<version>${org.springframework.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<!-- Json -->
+		<dependency>
+			<groupId>org.codehaus.jackson</groupId>
+			<artifactId>jackson-mapper-asl</artifactId>
+			<version>1.9.13</version>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>${junit.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.quartz-scheduler</groupId>
+			<artifactId>quartz</artifactId>
+			<version>2.2.1</version>
+		</dependency>
+
+		<dependency>
+			<groupId>activation</groupId>
+			<artifactId>activation</artifactId>
+			<version>1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/activation.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>axis-ant</groupId>
+			<artifactId>axis-ant</artifactId>
+			<version>1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/axis-ant.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>axis</groupId>
+			<artifactId>axis</artifactId>
+			<version>1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/axis.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-httpclient</groupId>
+			<artifactId>commons-httpclient</artifactId>
+			<version>3.0.1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/commons-httpclient-3.0.1.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>commons-discovery</groupId>
+			<artifactId>commons-discovery</artifactId>
+			<version>0.2</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/commons-discovery-0.2.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>jaxrpc</groupId>
+			<artifactId>jaxrpc</artifactId>
+			<version>1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/jaxrpc.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>mail</groupId>
+			<artifactId>mail</artifactId>
+			<version>1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/mail.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>saaj</groupId>
+			<artifactId>saaj</artifactId>
+			<version>1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/saaj.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>wsdl4j</groupId>
+			<artifactId>wsdl4j</artifactId>
+			<version>1.5.1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/wsdl4j-1.5.1.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>wsh</groupId>
+			<artifactId>wsh</artifactId>
+			<version>1.3.9</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/wsh_1.3.9.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>xalan</groupId>
+			<artifactId>xalan</artifactId>
+			<version>2.4.0</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/xalan-2.4.0.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>xercesImpl</groupId>
+			<artifactId>xercesImpl</artifactId>
+			<version>2.3.0</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/xercesImpl-2.3.0.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>xmlParserAPIs</groupId>
+			<artifactId>xmlParserAPIs</artifactId>
+			<version>2.2.1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/xmlParserAPIs-2_2_1.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>scpdb</groupId>
+			<artifactId>scpdb</artifactId>
+			<version>1</version>
+			<scope>system</scope>
+			<systemPath>${webcontent-dir}/WEB-INF/lib/scpdb.jar</systemPath>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.54</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.mindrot</groupId>
+			<artifactId>jbcrypt</artifactId>
+			<version>0.3m</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.poi</groupId>
+			<artifactId>poi</artifactId>
+			<version>3.10-FINAL</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-ooxml</artifactId>
+		    <version>3.10-FINAL</version>
+		</dependency>
+
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-ooxml-schemas</artifactId>
+		    <version>3.10-FINAL</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-excelant -->
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-excelant</artifactId>
+		    <version>3.10-FINAL</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/org.apache.poi/poi-scratchpad -->
+		<dependency>
+		    <groupId>org.apache.poi</groupId>
+		    <artifactId>poi-scratchpad</artifactId>
+		    <version>3.10-FINAL</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/sax/sax -->
+		<dependency>
+		    <groupId>sax</groupId>
+		    <artifactId>sax</artifactId>
+		    <version>2.0.1</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/javax.xml.stream/stax-api -->
+		<dependency>
+		    <groupId>javax.xml.stream</groupId>
+		    <artifactId>stax-api</artifactId>
+		    <version>1.0-2</version>
+		</dependency>
+		<!-- 
+		<dependency>
+		    <groupId>stax</groupId>
+		    <artifactId>stax-api</artifactId>
+		    <version>1.0.1</version>
+		</dependency>
+		 -->
+		<!-- https://mvnrepository.com/artifact/apache-xerces/xml-apis
+		<dependency>
+		    <groupId>apache-xerces</groupId>
+		    <artifactId>xml-apis</artifactId>
+		    <version>2.9.1</version>
+		</dependency>
+		 -->
+		<!-- -->
+		<dependency>
+		    <groupId>xml-apis</groupId>
+		    <artifactId>xml-apis</artifactId>
+		    <version>2.0.2</version>
+		</dependency>
+		 
+		<dependency>
+		    <groupId>org.apache.xmlbeans</groupId>
+		    <artifactId>xmlbeans</artifactId>
+		    <version>2.6.0</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>commons-codec</groupId>
+		    <artifactId>commons-codec</artifactId>
+		    <version>1.10</version>
+		</dependency>
+		<dependency>
+		    <groupId>dom4j</groupId>
+		    <artifactId>dom4j</artifactId>
+		    <version>1.6.1</version>
+		</dependency>
+		
+		<!-- ant contrib 2017.08.10 -->
+		<dependency>
+   			<groupId>ant-contrib</groupId>
+   			<artifactId>ant-contrib</artifactId>
+   			<version>1.0b3</version>
+		</dependency>
+		
+		
+	</dependencies>
+	<!-- 
+	<profiles>
+		<profile>
+			<id>dev</id>
+			<properties>
+				<env>dev</env>
+			</properties>
+		</profile>
+		<profile>
+			<id>prod</id>
+			<properties>
+				<env>prod</env>
+			</properties>
+		</profile>
+	</profiles>
+ 	-->
+	<build>
+		<defaultGoal>package</defaultGoal>
+		<directory>${basedir}/target</directory>
+		<finalName>${project.artifactId}</finalName>
+
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+					<encoding>UTF-8</encoding>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<skip>false</skip>
+					<includes>
+						<include>devonframe/**/*Test.java</include>
+					</includes>
+					<testFailureIgnore>false</testFailureIgnore>
+					<argLine>-Xms256m -Xmx512m -XX:MaxPermSize=128m -ea
+						-Dfile.encoding=UTF-8</argLine>
+				</configuration>
+			</plugin>
+			<plugin>
+			    <artifactId>maven-war-plugin</artifactId>
+			    <version>2.4</version>
+			    <configuration>
+			    	<warSourceExcludes>/export,/import,/fileupload</warSourceExcludes>
+			    	<packagingExcludes>/export,/import,/fileupload</packagingExcludes>
+			    	<webResources>
+            		<resource>
+            			<!-- 
+                		<directory>src/main/profiles/${env}</directory>
+                		 -->
+                		 <directory>src/main/profiles</directory>
+                		<targetPath>WEB-INF/classes</targetPath>
+            		</resource>
+        			</webResources>
+               </configuration>
+		   </plugin>
+		</plugins>
+	</build>
+</project>
+
+
+##### BD-SCMDB-DEV (build.xml)
+
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="scmdb" basedir=".">
+	
+	<taskdef resource="net/sf/antcontrib/antcontrib.properties" />
+	
+	<target name="bootstrap">
+		<mkdir dir="${user.home}/.ant/lib"/>
+	    <get dest="${user.home}/.ant/lib/ant-contrib.jar" src="http://search.maven.org/remotecontent?filepath=ant-contrib/ant-contrib/1.0b3/ant-contrib-1.0b3.jar"/>
+	</target>
+	
+	
+	<property name="env.PROJECT_MODE" value="dev" />
+	<property name="PROJECT_NAME" value="scmdb" />
+	<property file="build_dev.properties" />
+
+	<!-- System Properties cc-->
+	<property name="work.home.dir" value="${basedir}" />
+	<property name="build.src.dir" value="${work.home.dir}\src\main\java" />
+	<property name="nexacro.source.dir" value="${work.home.dir}\src\main\nxui" />
+	<property name="nexacro.target.dir" value="${work.home.dir}\src\main\webapp\nxui" />
+	<!--   not use but windows server 일 경우 사용 가능. 직접적인 nexacrogenerator 파일을 통해 변환하지 않음... -->
+	<property name="nexacro.src.lib.path" value="${work.home.dir}\src\main\nxui\nexacro14lib"/>
+	<property name="nexacro.target.lib.path" value="${work.home.dir}\src\main\webapp\nxui\nexacro14lib"/>
+	<property name="build.resources.dir" value="${work.home.dir}\src\main\resources" />
+	<property name="build.webbase.dir" value="${work.home.dir}\src\main\webapp" />
+	<property name="build.webinf.dir" value="${build.webbase.dir}\WEB-INF" />
+	<property name="build.target.dir" value="${basedir}/target/${PROJECT_NAME}" />
+	<property name="build.lib.dir" value="${build.webbase.dir}\WEB-INF\lib" />
+	<property name="was.tar.dir" value="${basedir}\build\was" />
+	<property name="web.tar.dir" value="${basedir}\build\web" />
+	<property name="servlet.lib.dir" value="${prop.was.home}\lib" />
+
+    <path id="lib.classpath">
+		<fileset dir="${servlet.lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+		<fileset dir="${build.lib.dir}">
+			<include name="*.jar" />
+		</fileset>
+	</path>
+
+ 	<target name="clean">
+	    <delete dir="${build.target.dir}"/>
+		<delete>
+			<fileset dir="${basedir}">
+			 	<include name="${PROJECT_NAME}.war"/>
+			</fileset>
+		</delete>
+	</target>
+
+	<target name="align">
+        <move todir="${work.home.dir}" verbose="true">
+            <fileset dir="${work.home.dir}" />
+            <mapper type="glob" from="*_${env.PROJECT_MODE}" to="*" />
+        </move>
+    </target>
+	
+	<!-- Windows 서버 일 경우 사용 가능 -->
+	<target name="nexacro" depends="align">
+		<copy todir="${nexacro.target.lib.path}" overwrite="true">
+			<fileset dir="${nexacro.src.lib.path}">
+				<include name="**/*"/>
+				<exclude name="**/.*svn"/>
+			</fileset>
+    	</copy>
+		<!--
+		<exec executable="cmd">
+			<arg value="/C" />
+			<arg value="nexacrogenerator -A ${nexacro.source.dir}\gdmi.xadl -O ${build.webbase.dir} -P nxui -B ${nexacro.target.lib.path}" />
+		</exec>
+		-->
+		<copy todir="${nexacro.target.dir}">
+			<fileset dir="${nexacro.source.dir}">
+				<include name="**/*"/>
+				<exclude name="**/.*svn"/>
+			</fileset>
+    	</copy>
+	</target>
+
+	<target name="copy" depends="align"> 	
+		  <copy todir="${build.target.dir}">
+			  <fileset dir="${build.resources.dir}">
+				  <include name="**/*"/>
+				  <exclude name="**/*_dev.properties"/>
+				  <exclude name="**/*_prod.properties"/>
+			  	  <exclude name="**/*_prod45.properties"/>
+				  <exclude name="**/*_prod46.properties"/>
+				  <exclude name="**/*_prod49.properties"/>
+			  	  <exclude name="**/*_prod50.properties"/>
+				  <!--  <exclude name="**/*_dev.xml"/>  -->
+				  <!--  <exclude name="**/*_prod.xml"/> -->
+				  <exclude name="**/.*svn"/>
+			  </fileset>
+    	</copy>
+    	<copy toDir="${build.target.dir}" includeemptydirs="false" overwrite="true">
+    		<fileset dir="${build.resources.dir}"/>
+    		<mapper type="regexp" from="(.*)_${env.PROJECT_MODE}\.properties" to="\1.properties"/>
+    	</copy>
+    	<copy toDir="${build.target.dir}" includeemptydirs="false" overwrite="true">
+    		<fileset dir="${build.resources.dir}"/>
+    		<mapper type="regexp" from="(.*)_${env.PROJECT_MODE}\.xml" to="\1.xml"/>
+    	</copy>
+    	<copy toDir="${build.webinf.dir}" includeemptydirs="false" overwrite="true">
+    		<fileset dir="${build.webinf.dir}"/>
+    		<mapper type="regexp" from="(.*)_${env.PROJECT_MODE}\.xml" to="\1.xml"/>
+    	</copy> 	
+	</target>
+
+	<target name="compile" depends="copy">
+      <echo>Compile Start...</echo>
+    	<copy todir="${build.target.dir}">
+    	    <fileset dir="${build.src.dir}">
+    	       <exclude name="**/*.java"/>
+    	    </fileset>
+    	</copy>
+			<javac destdir="${build.target.dir}"
+		    		   fork="yes"
+		    		   memoryInitialSize="256M"
+		    		   memoryMaximumSize="1024M"
+		    		   encoding="utf-8"
+						   includeantruntime="false"
+						   debug="true">
+			<src path="${build.src.dir}"/>
+			<classpath refid="lib.classpath" />
+ 		</javac>
+    	<echo>Compile End...</echo>
+	</target>
+	<!--  해당 프로젝트가 Maven 이면 사용할 수 없음 -->
+	<target name="war" depends="compile">
+		<echo>War File START...</echo>
+		<war destfile="${PROJECT_NAME}.war" webxml="${build.webbase.dir}/WEB-INF/web.xml">
+		  <zipfileset dir="${nexacro.source.dir}" prefix="nxui">
+		 	<include name="**/*.jsp" />
+		  </zipfileset>
+		  <lib dir="${build.lib.dir}">
+		    <exclude name="httpclient-4.5.2.jar" />
+		    <exclude name="httpcore-4.4.4.jar" />
+		    <exclude name="server.agent.developer.jar" />
+		  </lib>
+		  <classes dir="${build.target.dir}"/>
+		  <webinf dir="${build.webinf.dir}">
+			<include name="jsp/**/*"/>
+			<include name="tags/**/*"/>
+		  </webinf>
+		  <fileset dir="${build.webbase.dir}">
+			<include name="index.html"/>
+		  </fileset>
+		</war>
+		<echo>War END...</echo>
+	</target>
+	
+	<target name="tar">
+    	<echo>Delete directory and create directory</echo>
+        <delete dir="${was.tar.dir}" />
+        <mkdir dir="${was.tar.dir}" />
+        <tar destfile="${was.tar.dir}/${PROJECT_NAME}.tar" longfile="gnu">
+            <tarfileset dir="${build.target.dir}"
+                preserveLeadingSlashes="true">
+                    <exclude name="test.jsp" />
+            </tarfileset>
+        </tar>
+	</target>
+	
+	<!--  확인 사항. 개발서버에서도 htdocs와 WAS 소스 분리 -->
+	<target name="web_deploy">
+    	<echo message="web.remote.server set to = ${prop.web.server}" />
+    	<echo message="'### WEB Copy ###" />
+		<tstamp>
+		   	    <format property="TODAY" pattern="yyyyMMdd_HHmmss" />
+		</tstamp>
+    	<scp localfile="${web.tar.dir}/${PROJECT_NAME}.tar" todir="${prop.web.user}:${prop.web.password}@${prop.web.server}:${prop.web.dir}" trust="true" />
+    	<sshexec host="${prop.web.server}" username="${prop.web.user}"	password="${prop.web.password}"
+			command="rm -rf ${prop.web.dir}/nxui/*;rm -rf ${prop.web.dir}/rMateChartH5/*;rm -rf ${prop.web.dir}/daum_addr/*;rm -rf ${prop.web.dir}/common/*;
+    				rm -rf ${prop.web.dir}/tagfree/*;rm -rf ${prop.web.dir}/Install/*;
+    		         tar xvf ${prop.web.dir}/${PROJECT_NAME}.tar -C ${prop.web.dir};
+    				rm -rf ${prop.web.dir}/${PROJECT_NAME}.tar" trust="true" />
+		<sshexec host="${prop.web.server}" username="${prop.web.user}"	password="${prop.web.password}" 
+					command="mv ${prop.web.dir}/${PROJECT_NAME}.tar /logs001/tomcat/8.0/servers/gdmi_8180/war_bak/${PROJECT_NAME}.tar_${TODAY};"
+					trust="true" />
+    	<echo message="### WEB Deploy finished ###" />
+  	</target>
+
+    <target name="was_deploy">
+    	<echo message="### WAS Deploy ###" />
+    	<tstamp>
+    	    <format property="TODAY" pattern="yyyyMMdd_HHmmss" />
+   		</tstamp>
+		<sshexec host="${prop.was.server}" username="${prop.was.user}"	password="${prop.was.password}" command="rm -rf ${prop.was.dir}/scmdb.war/*; cp ${work.home.dir}/target/${PROJECT_NAME}.war ${prop.was.dir}; rm -rf ${prop.was.dir}/scmdb.war/WEB-INF/lib/ojdbc6-11.2.0.3.jar" trust="true" />
+        <echo message="was.remote.server set to = ${prop.was.server}" />
+	
+    
+		<echo message="### WAS Deploy finished ###" />
+	</target>
+	
+	<target name="real_was_deploy">
+		<foreach list="${prop.was.server}" target="wasdeploy" param="prop.was.server" parallel="true" />
+	</target>
+
+	<target name="real_web_deploy">
+		<foreach list="${prop.web.server}" target="webdeploy" param="prop.web.server" parallel="true" />
+	</target>
+
+	<target name="build_web">
+	    <antcall target="clean" />
+		<antcall target="tar" />
+		<antcall target="web_deploy" />
+	</target>
+
+ 	<target name="build_was">
+	    <antcall target="clean" />
+ 		<!--	<antcall target="was_deploy" />-->
+	</target>
+
+	<target name="build_all">
+	<!--	<antcall target="web_deploy" /> -->
+		<antcall target="build_was" />
+	</target>
+
+</project>
+
+##### BD-SCMDB-DEV (build_dev.properties)
+
+#prop.was.home=/engn001/tomcat/8.0
+
+prop.web.server=10.185.247.57
+prop.web.user=appadm
+prop.web.dir=/sorc001/appadm/applications/htdocs
+prop.web.password=!qusrud82
+
+
+prop.was.home=/engn001/tomcat/8.5/servers/scmdb_8180
+prop.was.server=10.185.247.57
+prop.was.user=appadm
+prop.was.dir=/sorc001/appadm/applications
+prop.was.password=!qusrud82
+
+
+
+
+
+
+
