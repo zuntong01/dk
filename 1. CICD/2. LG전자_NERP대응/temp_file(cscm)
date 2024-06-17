@@ -305,3 +305,63 @@ server.was.basedir=/sorc001/gscpadm/applications
 
 </project>
 
+
+############ 참고 : NEW GDMi (/sorc001/gdmiadm/ciserv/hudson/jobs/NERP_GDMi_dev_sonar/workspace/sonar-project.properties)
+
+# 2017.08.16
+# Project Identification
+sonar.projectKey=com.lge.gdmi
+sonar.projectVersion=1.0
+sonar.projectName=gdmi
+# Info required for Sonar
+# sonar.sources=src/main/java/
+sonar.java.source=1.7
+# Comma-separated paths to directories with sources (required)
+sonar.language=java
+# ----- Default source code encoding
+sonar.sourceEncoding=UTF-8
+
+<<<<<<< .mine
+sonar.modules=cdm,cmm,cpn,mdm,pmp,som,sop,spn,kpi,comm,system
+=======
+sonar.modules=cdm,cmm,cpn,mdm,pmp,som,sop,spn,mlf,comm,system
+>>>>>>> .r15688
+cdm.sonar.projectName=cdm
+cdm.sonar.projectBaseDir=src/main/java/com/lge/gdmi/cdm
+cdm.sonar.sources=.
+cmm.sonar.projectName=cmm
+cmm.sonar.projectBaseDir=src/main/java/com/lge/gdmi/cmm
+cmm.sonar.sources=.
+cpn.sonar.projectName=cpn
+cpn.sonar.projectBaseDir=src/main/java/com/lge/gdmi/cpn
+cpn.sonar.sources=.
+mdm.sonar.projectName=mdm
+mdm.sonar.projectBaseDir=src/main/java/com/lge/gdmi/mdm
+mdm.sonar.sources=.
+pmp.sonar.projectName=pmp
+pmp.sonar.projectBaseDir=src/main/java/com/lge/gdmi/pmp
+pmp.sonar.sources=.
+som.sonar.projectName=som
+som.sonar.projectBaseDir=src/main/java/com/lge/gdmi/som
+som.sonar.sources=.
+sop.sonar.projectName=sop
+sop.sonar.projectBaseDir=src/main/java/com/lge/gdmi/sop
+sop.sonar.sources=.
+spn.sonar.projectName=spn
+spn.sonar.projectBaseDir=src/main/java/com/lge/gdmi/spn
+spn.sonar.sources=.
+<<<<<<< .mine
+kpi.sonar.projectName=kpi
+kpi.sonar.projectBaseDir=src/main/java/com/lge/gdmi/kpi
+kpi.sonar.sources=.
+=======
+mlf.sonar.projectName=mlf
+mlf.sonar.projectBaseDir=src/main/java/com/lge/gdmi/mlf
+mlf.sonar.sources=.
+>>>>>>> .r15688
+comm.sonar.projectName=comm
+comm.sonar.projectBaseDir=src/main/java/com/lge/gdmi/comm
+comm.sonar.sources=.
+system.sonar.projectName=system
+system.sonar.projectBaseDir=src/main/java/com/lge/gdmi/
+system.sonar.sources=framework,sample
