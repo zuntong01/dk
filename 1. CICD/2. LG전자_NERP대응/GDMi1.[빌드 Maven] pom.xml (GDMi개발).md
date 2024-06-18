@@ -118,9 +118,9 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
     <finalName> : 빌드산출물의 이름 (properties섹션에서 명시한 artifactID를 따라감)
     <plugins> : Maven plugin
       <plugin> maven-compiler-plugin 을 통해 빌드하고, 1.7 호환, UTF-8인코딩으로 빌드처리함
-      <plugin> mvn test명령어로 maven-surefire-plugin 이 프로젝트의 src/test/java 의 코드를 실행함
-               추가적으로 <include>를 사용하여 테스트 코드 범위를 늘리기 위해 사용함
-               단, devonframe/**/*Test.java 형식은 devonframe 패키지의 루트디렉토리 하위에 모든 디렉토리에서 *Test.java 코드를 실행하는 의미로 보임.
+      <plugin> mvn test명령어로 maven-surefire-plugin 은 기본적으로 src/test/java 하위의 **/*Test*.java 컴파일하고 실행함.
+               <include>를 사용하면, 기본적으로 해당 path의 테스트 코드만 실행하는걸로 override 함 
+               : 따라서 devonframe/**/*Test.java는 src/test/java/devonframe/**/*Test.java 를 컴파일하고 실행 (예상)
               (컴파일되지 않았음으로 maven을 컴파일하고 테스트코드를 실행함)
       <plugin> maven-war-plugins 을 통해, 빌트 아티팩트를 war로 만듬
                1. src/main/webapp 디렉토리의 모든 파일을 WAR파일 최상단으로 위치 시킴
