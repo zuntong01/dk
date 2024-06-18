@@ -101,7 +101,7 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
 <!--
     <repository> maven 저장소 의존성파일을 검색위치 정의 (해당저장소에서 > .m2디렉토리로 가져옴 / 저장소에 접근할수 없다면, m2디렉토리를 검색함)
     <pluginRepository> Maven 플러그인을 검색하는 곳을 정의
-        <snapshots>, <releases> 버젼에 대한 활성화시켜 다운로드 받도록 허용함 (기본적으로 허용임)
+        <snapshots>, <releases> 버젼에 대한 활성화시켜 다운로드 받도록 허용함 (기본적으로 releases는 허용 / snapshot은 허용하지 않음)
             ※<snapshots>의 경우 의존성파일의 버젼을 <version>1.0-SNAPSHOT</version> 라고 명시할경우, 
             예를 들어, http://repo_URL/"groupID"/"artifactID"/1.0-SNAPSHOT 하위에 최신파일을 예) artifact-1.0-20240614.123456-1.jar 가져오는데, 해당 파일을 가져올지/말지 빌드가 트리거될때마다, 가져올지/말지 등을 주기를 지정할수도 있음
             ※<releases>는 일반적일 버젼명시를 사용하는 의존성파일에 대한 다운로드 유무등의 정책을 결정하는것 같음
