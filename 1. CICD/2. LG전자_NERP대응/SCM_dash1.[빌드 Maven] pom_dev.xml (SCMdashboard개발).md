@@ -212,8 +212,8 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
                     maven은 의존성트리라고하여, 해당라이브러리가 의존성하는 다른라이브러리를 함께 다운로드 됨
                     라이브러리가 의존하는 파일이 없다면, Maven 빌드는 실패
              <scope> compile : 컴파일단계에서 컴파일러 클래스패스에 추가(소스컴파일에 사용됨),
-                              WEB-INF/lib 하위에 저장되어, 빌드결과물에 포함됨 (runtime에 사용됨). -->
-            ※ <scope>가 명시 되지 안으면 compile로 동작함
+                              WEB-INF/lib 하위에 저장되어, 빌드결과물에 포함됨 (runtime에 사용됨).
+			      ※ <scope>가 명시 되지 안으면 compile로 동작함
                 <scope> compile : 컴파일단계에서 컴파일러 클래스패스에 추가(소스컴파일에 사용됨),
                                 WEB-INF/lib 하위에 저장되어, 빌드결과물에 포함됨 (runtime에 사용됨).
                 <scope> runtime : 컴파일단계에서 컴파일러 클래스패스에 사용되지 않음 X
@@ -222,7 +222,8 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
                 <scope> test : 테스트단계에서, 컴파일러 클래스패스에 추가되어 테스트소스 컴파일 / 
                          컴파일된 테스트코드를 실행할때도, 클래스패스에 포함되어 사용됨, 빌드결과물에는 포함안됨 X 
                 <scope> system : 로컬디렉토리(sysemPath) 에 있는 파일을 빌드과정에서 클래스패스로 추가 / 런타임에는 포함안됨X
-                        <systemPath>"외부path에 있는 jar파일 path 지정"<systemPath> -->
+                        <systemPath>"외부path에 있는 jar파일 path 지정"<systemPath>
+    -->
 		<dependency>
 			<groupId>devonframe</groupId>
 			<artifactId>devon-transaction</artifactId>
