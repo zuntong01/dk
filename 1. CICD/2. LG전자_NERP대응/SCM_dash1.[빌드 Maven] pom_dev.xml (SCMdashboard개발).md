@@ -240,14 +240,47 @@ maven 빌드를 하기위한 빌드스크립트 (maven 프로젝트 빌드를 �
 </project>
 
 <!-- ※ 실제 사용된 depedency 라이브러리 항목
-
-    <groupID>     <artifactID>
-    <groupID>     <artifactID>
-
-
-
-
-
-
+    <groupID> org.springframework	<artifactID> spring-context-support,spring-context,spring-jdbc,spring-webmvc,spring-test
+    <groupID> devonframe		<artifactID> devon-web,devon-dataaccess,devon-transaction,devon-fileupload,devon-paging,devon-mail,devon-crypto
+    <groupID> org.mybatis		<artifactID> mybatis,
+    <groupID> org.aspectj		<artifactID> aspectjweaver
+    <groupID> com.googlecode.json-simple	<artifactID> json-simple
+    <groupID> javax.servlet		<artifactID> javax.servlet-api,jstl,
+    <groupID> javax.annotation		<artifactID> jsr250-api
+    <groupID> taglibs			<artifactID> standard		
+    <groupID> commons-dbcp		<artifactID> commons-dbcp
+    <groupID> oracle			<artifactID> ojdbc6		 
+    <groupID> org.lazyluke		<artifactID> log4jdbc-remix
+    <groupID> org.slf4j			<artifactID> slf4j-log4j12
+    <groupID> com.tobesoft		<artifactID> nexacro-xapi
+    <groupID> nexacro-xeni		<artifactID> nexacro-xeni
+    <groupID> servlets.com		<artifactID> cos
+    <groupID> org.codehaus.jackson	<artifactID> jackson-mapper-asl
+    <groupID> junit			<artifactID> junit
+    <groupID> org.quartz-scheduler	<artifactID> quartz		
+    <groupID> activation		<artifactID> activation
+    <groupID> axis-ant			<artifactID> axis-ant
+    <groupID> axis			<artifactID> axis
+    <groupID> commons-httpclient	<artifactID> commons-httpclient
+    <groupID> commons-discovery		<artifactID> commons-discovery
+    <groupID> jaxrpc			<artifactID> jaxrpc
+    <groupID> mail			<artifactID> mail
+    <groupID> saaj			<artifactID> saaj
+    <groupID> wsdl4j			<artifactID> wsdl4j
+    <groupID> wsh			<artifactID> wsh
+    <groupID> xalan			<artifactID> xalan
+    <groupID> xercesImpl		<artifactID> xercesImpl
+    <groupID> xmlParserAPIs		<artifactID> xmlParserAPIs
+    <groupID> scpdb			<artifactID> scpdb
+    <groupID> org.bouncycastle		<artifactID> bcprov-jdk15on
+    <groupID> org.mindrot		<artifactID> jbcrypt
+    <groupID> org.apache.poi		<artifactID> poi,poi-ooxml,poi-ooxml-schemas,poi-excelant,poi-scratchpad
+    <groupID> sax			<artifactID> sax
+    <groupID> javax.xml.stream		<artifactID> stax-api
+    <groupID> xml-apis			<artifactID> xml-apis
+    <groupID> org.apache.xmlbeans	<artifactID> xmlbeans
+    <groupID> commons-codec		<artifactID> commons-codec
+    <groupID> dom4j			<artifactID> dom4j
+    <groupID> ant-contrib		<artifactID> ant-contrib	
 -->
 ```
