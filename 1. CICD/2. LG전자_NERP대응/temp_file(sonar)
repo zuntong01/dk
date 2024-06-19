@@ -1,4 +1,10 @@
 #### SCMdashboard ## --실제동작안함 참고만
+1. 사전명령으로 빌드수행 (/sorc001/appadm/ciserv/maven/apace-maven-3.6.3/bin/mvn -f test/pom.xml clean package)
+2. JOB설정에서 Excute sonarqube scanner 에서 아래 property설정
+3. Sonar관련 플러그인 설치함.
+   Jenkins global tools 설정에서 sonarqube scanner : 설치위치 지정되어 있음  
+   Jenkins 시스템 설정에서 Sonarqube servers : 설정 URL만 설정되어 있음.....
+
 sonar.projectKey=BD-TEST-JOB
 sonar.sources=/sorc001/appadm/ciserv/jenkins/workspace/BD-TEST-JOB/test/src
 sonar.java.binaries=/sorc001/appadm/ciserv/jenkins/workspace/BD-TEST-JOB/test/target
@@ -8,8 +14,11 @@ sonar.login=sqp_a5ee1eb8a413cb2c87164c528d92cd23c8a6ebab
 
 
 ###### GSCP ##############
-JOB 빌드 설정에서 Invoke Ant 의 빌드파일 path로 설정
-script/sonar/build_sonar.xml
+1. ant로 함께 빌드하여, sonar 수행시 빌드파일 생성함.
+2. JOB설정에서 Invoke Ant 의 빌드파일내에 <sonar:sonar> 로 수행됨.
+3. Sonar관련 플러그인 설치함.
+   Jenkins 시스템 설정에서 Sonar runner에서 : 플러그인으로 설치함 (ant 플러그인으로 동작하기 때문에 해당 플러그인으로 실행되지 않을듯)
+   Jenkins 시스템 설정에서 sonar에서 : 설정없음.
 
 <property name="target.dir" value="target" />
 <property name="target.dir.was" value="${target.dir}/WAS" />
@@ -37,7 +46,12 @@ tomcat.home=/engn001/tomcat/8.0
 
 
 ###### NEW GDMi ##############
-JOB 빌드 설정에서 Invoke Standalone Sonar Analysis 에 Path to properteis 에 파일설정
+1. 별도로 사전 빌드 구성은 없음
+2. JOB설정에서 Invoke Standalone Sonar Analysis 에 Path to properteis 에 설정으로 수행됨
+3. Sonar관련 플러그인 설치함.
+   Jenkins 시스템 설정에서 Sonar runner에서 : 플러그인으로 설치함.
+   Jenkins 시스템 설정에서 sonar에서 : URL, 로그인정보, sonar DB정보 입력되어 있음
+
 /sorc001/gdmiadm/ciserv/hudson/jobs/NERP_GDMi_dev_sonar/workspace/sonar-project.properties
 
 # 2017.08.16
