@@ -39,7 +39,7 @@ ant 빌드를 하기위한 빌드스크립트
     <property name="nexacro.target.lib.path" value="${work.home.dir}\src\main\webapp\nxui\nexacro14lib" />
     
     <property name="build.resource.dir" value="${work.home.dir}\src\main\resources">
-    <property name="build.webbasedir" value="${work.home.dir}\src\main\webapp">
+    <property name="build.webbase.dir" value="${work.home.dir}\src\main\webapp">
     <property name="build.webinf.dir" value="${build.webbasedir}\WEB-INF" />
     <property name="build.target.dir" value="${build.webbasedir}\WEB-INF\classes" />
     <property name="build.lib.dir" value="${build.webbasedir}\WEB_INF\lib" />
