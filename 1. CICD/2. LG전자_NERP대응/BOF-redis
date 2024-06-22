@@ -206,3 +206,23 @@ sentinel known-sentinel mymaster 10.185.176.165 0 56febba2557815bd8c411d556edf25
 sentinel known-sentinel mymaster 127.0.0.1 26379 0b7715374bc18cae085a562f964da66261a5aff2
 sentinel known-sentinel mymaster 10.185.176.165 26379 0da1f838e0d46da78a6346163a40dc6fb9e77794
 
+
+## recli -p 26379
+> info sentnel
+# Sentinel
+sentinel_masters:1
+sentinel_tilt:0
+sentinel_running_scripts:0
+sentinel_scripts_queue_length:0
+sentinel_simulate_failure_flags:0
+master0:name=mymaster,status=ok,address=10.185.176.139:9981,slaves=7,sentinels=11
+
+./redis-cli -p 26379
+127.0.0.1:26379> info sentinel
+# Sentinel
+sentinel_masters:1
+sentinel_tilt:0
+sentinel_running_scripts:0
+sentinel_scripts_queue_length:0
+sentinel_simulate_failure_flags:0
+master0:name=mymaster,status=odown,address=10.185.176.92:9981,slaves=0,sentinels=1
