@@ -226,3 +226,247 @@ sentinel_running_scripts:0
 sentinel_scripts_queue_length:0
 sentinel_simulate_failure_flags:0
 master0:name=mymaster,status=odown,address=10.185.176.92:9981,slaves=0,sentinels=1
+
+
+
+###################################################################################
+
+1. Config.java
+    public static final String APPLICATION_PROPERTIES_FILE = "redis-data-cache.properties";
+
+    @Property(name = "redis.hosts", defaultValue = "127.0.0.1:6379")
+    private String redisHosts;
+
+    @Property(name = "redis.sentinel.enabled", type = BOOLEAN, defaultValue = "false")
+    private Boolean redisSentinelEnabled;
+
+    @Property(name = "redis.sentinel.master", defaultValue = "mymaster")
+    private String redisSentinelMaster;
+
+ @Override
+    public String toString() {
+        return "Config{" +
+                "redisHosts='" + redisHosts + '\'' +
+                ", redisSentinelEnabled=" + redisSentinelEnabled +
+                ", redisSentinelMaster='" + redisSentinelMaster + '\'' +
+                '}';
+    }
+    /** To get redis config type. */
+    public RedisConfigType getRedisConfigType() {
+        if (this.getRedisClusterEnabled()) {
+            return RedisConfigType.CLUSTER;
+        } else if (this.getRedisSentinelEnabled()) {
+            return RedisConfigType.SENTINEL;
+        }
+        return RedisConfigType.DEFAULT;
+    }
+}
+############################################################################################################3
+2. RedisCache.java
+## getJedisNodes에서 redis.host로 주소:포트를 1개씩 잘라서 nodes 에 넣는다.
+## JedisPoolConfig 에서 그밖에 연결설정정보를 받아와 poolConfig에 넣는다.
+## getRedisConfigType 이 SETINEL일 경우 RedisSentinellManager를 호출하여 실행함
+
+    private void initialize(Config config) {
+        Collection<?> nodes = getJedisNodes(config.getRedisHosts(), config.getRedisConfigType());
+        JedisPoolConfig poolConfig = getPoolConfig(config);
+        switch (config.getRedisConfigType()) {
+            case CLUSTER:
+                this.dataCache = new RedisClusterManager((Set<HostAndPort>) nodes,
+                        config.getRedisPassword(),
+                        config.getRedisTimeout(),
+                        poolConfig);
+                break;
+            case SENTINEL:
+                this.dataCache = new RedisSentinelManager((Set<String>) nodes,
+                        config.getRedisSentinelMaster(),
+                        config.getRedisPassword(),
+                        config.getRedisDatabase(),
+                        config.getRedisTimeout(),
+                        poolConfig);
+                break;
+            default:
+                this.dataCache = new RedisStandardManager(((List<String>) nodes).get(0),
+                        Integer.parseInt(((List<String>) nodes).get(1)),
+                        config.getRedisPassword(),
+                        config.getRedisDatabase(),
+                        config.getRedisTimeout(),
+                        poolConfig);
+                break;
+
+
+    private Collection<?> getJedisNodes(String hosts, RedisConfigType configType) {
+        hosts = hosts.replaceAll("\\s", "");
+        String[] hostPorts = hosts.split(",");
+
+        Set<Object> nodes = null;
+
+        for (String hostPort : hostPorts) {
+            String[] hostPortArr = hostPort.split(":");
+
+            switch (configType) {
+                case CLUSTER:
+                    nodes = (nodes == null) ? new HashSet<>() : nodes;
+                    nodes.add(new HostAndPort(hostPortArr[0], Integer.parseInt(hostPortArr[1])));
+                    break;
+                case SENTINEL:
+                    nodes = (nodes == null) ? new HashSet<>() : nodes;
+                    nodes.add(new HostAndPort(hostPortArr[0], Integer.parseInt(hostPortArr[1])).toString());
+                    break;
+                default:
+                    int port = Integer.parseInt(hostPortArr[1]);
+                    if (!hostPortArr[0].isEmpty() && port > 0) {
+                        List<String> node = new ArrayList<>();
+                        node.add(hostPortArr[0]);
+                        node.add(String.valueOf(port));
+                        return node;
+                    }
+            }
+        }
+        return nodes;
+
+############################################################################################################
+3. RedisSentinelManager.java
+## RedisSentinelManater라는 클래스가 위에 인자값을 받아와서, JedisSentienlPool 을 호출함
+
+class RedisSentinelManager extends RedisManager {
+
+    private static final long FAILURE_WAIT_TIME = 2000L;
+
+    RedisSentinelManager(Set<String> nodes,
+                         String masterName,
+                         String password,
+                         int database,
+                         int timeout,
+                         JedisPoolConfig poolConfig) {
+        super(new JedisSentinelPool(masterName, nodes, poolConfig, timeout, password, database), FAILURE_WAIT_TIME);
+    }
+}
+############################################################################################################ㅁ
+※ jedis.jar 파일에 있는 메소드들임
+
+4. JedisSentinelPool.java
+## new Jedis 에서 전달받은 노드정보로 연결생성함
+## jedis.sentinelGetMasterAddrByName : 연결된 노드에서 master의 접속주소가 무엇인지 확인함
+
+
+  private HostAndPort initSentinels(Set<HostAndPort> sentinels, final String masterName) {
+
+    HostAndPort master = null;
+    boolean sentinelAvailable = false;
+
+    log.info("Trying to find master from available Sentinels...");
+
+    for (HostAndPort sentinel : sentinels) {
+
+      log.debug("Connecting to Sentinel {}", sentinel);
+
+      try (Jedis jedis = new Jedis(sentinel, sentinelClientConfig)) {
+
+        List<String> masterAddr = jedis.sentinelGetMasterAddrByName(masterName);
+        // connected to sentinel...
+        sentinelAvailable = true;
+
+        if (masterAddr == null || masterAddr.size() != 2) {
+          log.warn("Can not get master addr, master name: {}. Sentinel: {}", masterName, sentinel);
+          continue;
+        }
+
+        master = toHostAndPort(masterAddr);
+        log.debug("Found Redis master at {}", master);
+        break;
+      } catch (JedisException e) {
+        // resolves #1036, it should handle JedisException there's another chance
+        // of raising JedisDataException
+        log.warn(
+            "Cannot get master address from sentinel running @ {}. Reason: {}. Trying next one.",
+            sentinel, e);
+      }
+    }
+
+    if (master == null) {
+      if (sentinelAvailable) {
+        // can connect to sentinel, but master name seems to not monitored
+        throw new JedisException("Can connect to sentinel, but " + masterName
+            + " seems to be not monitored...");
+      } else {
+        throw new JedisConnectionException("All sentinels down, cannot determine where is "
+            + masterName + " master is running...");
+      }
+    }
+
+    log.info("Redis master running at {}, starting Sentinel listeners...", master);
+
+    for (HostAndPort sentinel : sentinels) {
+
+      MasterListener masterListener = new MasterListener(masterName, sentinel.getHost(), sentinel.getPort());
+      // whether MasterListener threads are alive or not, process can be stopped
+      masterListener.setDaemon(true);
+      masterListeners.add(masterListener);
+      masterListener.start();
+    }
+
+    return master;
+  }
+
+############################################################################################################
+※ jedis.jar 파일에 있는 메소드들임
+
+5. Jedis.java
+## sentinelGetMasterAddrByName 에서 Redis 클라이언트(client)를 사용하여 Sentinel에게 SENTINEL GET-MASTER-ADDR-BY-NAME mymaster 명령을 실행해 현재 master노드의 정보를 받아옴
+
+ @Override
+  public List<String> sentinelGetMasterAddrByName(final String masterName) {
+    client.sentinel(Protocol.SENTINEL_GET_MASTER_ADDR_BY_NAME, masterName);
+    final List<Object> reply = client.getObjectMultiBulkReply();
+    return BuilderFactory.STRING_LIST.build(reply);
+  }
+############################################################################################################
+※ jedis.jar 파일에 있는 메소드들임
+6. Client.java
+## client 생성하는 BinaryClient 도 가져옴..
+## Client.java에서 sentinel을 실행함
+## sentinel은 다시 setinel을 실행함 해당 sentinel은 BinaryClient.java에 좀재함
+
+@Deprecated
+public class Client extends BinaryClient implements Commands {
+
+  public Client() {
+    super();
+  }
+
+  public void sentinel(final String... args) {
+    sentinel(SafeEncoder.encodeMany(args));
+  }
+
+  public void sentinel(SentinelKeyword subcommand, final String... args) {
+    sentinel(subcommand, SafeEncoder.encodeMany(args));
+  }
+############################################################################################################
+
+※ jedis.jar 파일에 있는 메소드들임
+7. BinaryClient.java .java
+
+
+  public void sentinel(final byte[]... args) {
+    sendCommand(SENTINEL, args);
+  }
+
+  public void sentinel(SentinelKeyword subcommand, final byte[]... args) {
+    sendCommand(SENTINEL, joinParameters(subcommand.getRaw(), args));
+  }
+
+  public void sentinel(SentinelKeyword subcommand) {
+    sendCommand(SENTINEL, subcommand.getRaw());
+
+
+※ jedis.jar 파일에 있는 메소드들임
+8. Protocol.java
+
+  @Deprecated public static final String SENTINEL_GET_MASTER_ADDR_BY_NAME = "get-master-addr-by-name";
+
+############################################################################################################
+
+
+
+
